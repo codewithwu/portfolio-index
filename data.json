@@ -1,0 +1,9 @@
+[
+    {
+        "name": "数据分析Agent系统",
+        "path": "html/数据分析Agent系统.html",
+        "github": "https://github.com/codewithwu/car-sales-agent",
+        "star": 1,
+        "description": "基于规则引擎 + LangGraph 工作流的汽车销售数据智能查询系统"
+    }
+]
