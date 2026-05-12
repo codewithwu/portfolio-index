@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediMind 多智能体医疗诊断系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --accent-teal: #14b8a6;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-violet: #8b5cf6;
+            --accent-rose: #f43f5e;
+            --accent-amber: #f59e0b;
+            --accent-blue: #3b82f6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            font-family: 'Noto Sans SC', system-ui, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(20, 184, 166, 0.06) 1px, transparent 0);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-1 { top: -100px; left: 10%; width: 500px; height: 500px; background: var(--accent-teal); }
+        .glow-2 { bottom: -150px; right: 5%; width: 600px; height: 600px; background: var(--accent-violet); }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 32px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 64px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.15), rgba(20, 184, 166, 0.05));
+            border: 1px solid rgba(20, 184, 166, 0.3);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-teal);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-subtitle span {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(26, 34, 53, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.7s ease-out backwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent-cyan)), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover::before { opacity: 1; }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon { font-size: 2.2rem; margin-bottom: 16px; }
+        .card-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-title .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 600;
+        }
+
+        .tag-backend { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .tag-frontend { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .tag-agent { background: rgba(20, 184, 166, 0.2); color: #2dd4bf; }
+        .tag-core { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+        .tag-api { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .card-list {
+            list-style: none;
+        }
+
+        .card-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card-list li:last-child { border-bottom: none; }
+
+        .card-list li::before {
+            content: '▸';
+            color: var(--accent-teal);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .card-list .highlight {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .card-list .code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+        }
+
+        /* 流程图 */
+        .flow-section {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(26, 34, 53, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.7s ease-out 0.5s backwards;
+        }
+
+        .flow-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .flow-title span { color: var(--accent-teal); }
+
+        .parallel-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .parallel-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .agent-node {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 20px 28px;
+            text-align: center;
+            min-width: 160px;
+            position: relative;
+        }
+
+        .agent-node.primary {
+            border-color: rgba(20, 184, 166, 0.5);
+            background: linear-gradient(135deg, rgba(20, 184, 166, 0.1), rgba(20, 184, 166, 0.05));
+        }
+
+        .agent-node.final {
+            border-color: rgba(139, 92, 246, 0.5);
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.05));
+        }
+
+        .agent-icon { font-size: 2rem; margin-bottom: 10px; }
+        .agent-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+        .agent-role { font-size: 0.8rem; color: var(--text-muted); }
+
+        .flow-arrow {
+            color: var(--accent-cyan);
+            font-size: 1.5rem;
+        }
+
+        .flow-arrow-down {
+            color: var(--accent-teal);
+            font-size: 2rem;
+        }
+
+        .bracket-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .bracket {
+            font-size: 3rem;
+            color: var(--accent-teal);
+            font-family: monospace;
+        }
+
+        /* 四专家网格 */
+        .expert-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .expert-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .expert-icon { font-size: 1.5rem; margin-bottom: 8px; }
+        .expert-name { font-weight: 600; color: var(--accent-teal); font-size: 0.9rem; }
+        .expert-focus { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* 技术栈表格 */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        .tech-table th, .tech-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
+        }
+
+        .tech-table th {
+            color: var(--accent-teal);
+            font-weight: 600;
+        }
+
+        .tech-table td:first-child {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 32px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            animation: fadeInUp 0.7s ease-out 0.7s backwards;
+        }
+
+        .footer span { color: var(--accent-amber); }
+
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+            .expert-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 2rem; }
+            .container { padding: 40px 16px; }
+            .parallel-row { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+            .expert-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-tag">🏥 AI 医疗诊断</div>
+            <h1>MediMind 多智能体系统</h1>
+            <p class="header-subtitle">
+                <span>AI 多智能体</span> 协作医疗诊断分析 — 模拟多学科专家团队
+            </p>
+            <a href="https://github.com/codewithwu/MediMind" style="display: inline-block; margin-top: 16px; color: var(--accent-emerald); text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/MediMind</a>
+        </div>
+
+        <!-- 技术栈 -->
+        <div class="grid">
+            <!-- 后端技术栈 -->
+            <div class="card" style="--card-accent: #3b82f6;">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">
+                    后端技术栈
+                    <span class="tag tag-backend">Backend</span>
+                </div>
+                <table class="tech-table">
+                    <tr><td>FastAPI</td><td>0.136.0+</td><td>异步 Web 框架</td></tr>
+                    <tr><td>LangChain</td><td>1.2.15+</td><td>LLM 应用框架</td></tr>
+                    <tr><td>LangChain-Community</td><td>0.4.1+</td><td>社区组件</td></tr>
+                    <tr><td>LangChain-Ollama</td><td>1.1.0+</td><td>本地模型支持</td></tr>
+                    <tr><td>LangChain-OpenAI</td><td>1.1.16+</td><td>OpenAI 兼容</td></tr>
+                    <tr><td>PyPDF</td><td>6.10.2+</td><td>PDF 解析</td></tr>
+                    <tr><td>DeepSeek API</td><td>-</td><td>LLM 模型驱动</td></tr>
+                    <tr><td>uvicorn</td><td>0.45.0+</td><td>ASGI 服务器</td></tr>
+                </table>
+            </div>
+
+            <!-- 前端技术栈 -->
+            <div class="card" style="--card-accent: #8b5cf6;">
+                <div class="card-icon">🎨</div>
+                <div class="card-title">
+                    前端技术栈
+                    <span class="tag tag-frontend">Frontend</span>
+                </div>
+                <table class="tech-table">
+                    <tr><td>React</td><td>19.2.5</td><td>UI 框架</td></tr>
+                    <tr><td>TypeScript</td><td>~6.0.2</td><td>类型安全</td></tr>
+                    <tr><td>Vite</td><td>8.0.9</td><td>构建工具</td></tr>
+                    <tr><td>Axios</td><td>1.15.2</td><td>HTTP 客户端</td></tr>
+                    <tr><td>React Markdown</td><td>10.1.0</td><td>Markdown 渲染</td></tr>
+                </table>
+                <div style="margin-top: 20px;">
+                    <p class="card-desc" style="margin-bottom: 12px;">设计风格</p>
+                    <ul class="card-list">
+                        <li><span class="highlight">深色主题</span> 医疗科技感</li>
+                        <li><span class="highlight">CSS 变量</span> 统一配色</li>
+                        <li><span class="highlight">SVG 图标</span> 四专家图标</li>
+                        <li><span class="highlight">玻璃态</span> 卡片效果</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- AI Agent -->
+            <div class="card" style="--card-accent: #14b8a6;">
+                <div class="card-icon">🤖</div>
+                <div class="card-title">
+                    AI Agent 层
+                    <span class="tag tag-agent">Agent</span>
+                </div>
+                <p class="card-desc">基于 LangChain PromptTemplate + ChatOpenAI 实现</p>
+                <div class="expert-grid">
+                    <div class="expert-card">
+                        <div class="expert-icon">❤️</div>
+                        <div class="expert-name">Cardiologist</div>
+                        <div class="expert-focus">心脏病专家<br>心电图/血液检查</div>
+                    </div>
+                    <div class="expert-card">
+                        <div class="expert-icon">🧠</div>
+                        <div class="expert-name">Psychologist</div>
+                        <div class="expert-focus">心理专家<br>焦虑/抑郁评估</div>
+                    </div>
+                    <div class="expert-card">
+                        <div class="expert-icon">🫁</div>
+                        <div class="expert-name">Pulmonologist</div>
+                        <div class="expert-focus">肺科专家<br>呼吸系统感染</div>
+                    </div>
+                    <div class="expert-card">
+                        <div class="expert-icon">👥</div>
+                        <div class="expert-name">MultiTeam</div>
+                        <div class="expert-focus">多学科团队<br>汇总综合诊断</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 协作流程 -->
+        <div class="flow-section">
+            <div class="flow-title">🔄 <span>多智能体</span> 协作流程 — 并行分析 + 串行汇总</div>
+
+            <div class="parallel-container">
+                <!-- 上传阶段 -->
+                <div class="parallel-row">
+                    <div class="agent-node primary">
+                        <div class="agent-icon">📄</div>
+                        <div class="agent-name">PDF Upload</div>
+                        <div class="agent-role">用户上传医疗报告</div>
+                    </div>
+                    <span class="flow-arrow">→</span>
+                    <div class="agent-node">
+                        <div class="agent-icon">🔑</div>
+                        <div class="agent-name">task_id</div>
+                        <div class="agent-role">生成唯一 UUID</div>
+                    </div>
+                </div>
+
+                <span class="flow-arrow-down">↓</span>
+
+                <!-- 并行阶段 -->
+                <div class="bracket-row">
+                    <span class="bracket">┌</span>
+                    <div class="parallel-row">
+                        <div class="agent-node">
+                            <div class="agent-icon">❤️</div>
+                            <div class="agent-name">Cardiologist</div>
+                            <div class="agent-role">并行分析</div>
+                        </div>
+                        <span class="flow-arrow">∥</span>
+                        <div class="agent-node">
+                            <div class="agent-icon">🧠</div>
+                            <div class="agent-name">Psychologist</div>
+                            <div class="agent-role">并行分析</div>
+                        </div>
+                        <span class="flow-arrow">∥</span>
+                        <div class="agent-node">
+                            <div class="agent-icon">🫁</div>
+                            <div class="agent-name">Pulmonologist</div>
+                            <div class="agent-role">并行分析</div>
+                        </div>
+                    </div>
+                    <span class="bracket">┘</span>
+                </div>
+
+                <span class="flow-arrow-down">↓</span>
+
+                <!-- 串行汇总 -->
+                <div class="parallel-row">
+                    <div class="agent-node final">
+                        <div class="agent-icon">👥</div>
+                        <div class="agent-name">MultidisciplinaryTeam</div>
+                        <div class="agent-role">汇总三科意见 → 最终报告</div>
+                    </div>
+                </div>
+
+                <span class="flow-arrow-down">↓</span>
+
+                <!-- 输出 -->
+                <div class="parallel-row">
+                    <div class="agent-node primary">
+                        <div class="agent-icon">📋</div>
+                        <div class="agent-name">results/{task_id}.md</div>
+                        <div class="agent-role">保存 + 前端轮询获取</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心模块 -->
+        <div class="grid">
+            <!-- PDF处理器 -->
+            <div class="card" style="--card-accent: #f43f5e;">
+                <div class="card-icon">📑</div>
+                <div class="card-title">
+                    PDFProcessor
+                    <span class="tag tag-core">服务</span>
+                </div>
+                <p class="card-desc">PDF 文件处理与文本提取</p>
+                <ul class="card-list">
+                    <li><span class="highlight">save_pdf()</span> 保存并返回 UUID</li>
+                    <li><span class="highlight">load_pdf()</span> 提取文本内容</li>
+                    <li><span class="highlight">get_file_path()</span> 获取文件路径</li>
+                    <li>使用 <span class="code">PyPDFLoader</span></li>
+                    <li>文件存储于 <span class="code">uploads/</span></li>
+                </ul>
+            </div>
+
+            <!-- 任务管理器 -->
+            <div class="card" style="--card-accent: #f59e0b;">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">
+                    TaskManager
+                    <span class="tag tag-core">服务</span>
+                </div>
+                <p class="card-desc">管理分析任务生命周期</p>
+                <ul class="card-list">
+                    <li><span class="highlight">AnalysisTask</span> 任务数据模型</li>
+                    <li><span class="highlight">create_task()</span> 创建新任务</li>
+                    <li><span class="highlight">get_status()</span> 查询进度</li>
+                    <li><span class="highlight">get_result()</span> 获取结果</li>
+                    <li><span class="highlight">set_failed()</span> 错误处理</li>
+                </ul>
+            </div>
+
+            <!-- API路由 -->
+            <div class="card" style="--card-accent: #10b981;">
+                <div class="card-icon">🔌</div>
+                <div class="card-title">
+                    API Routes
+                    <span class="tag tag-api">接口</span>
+                </div>
+                <p class="card-desc">FastAPI 异步接口定义</p>
+                <ul class="card-list">
+                    <li><span class="code">POST /api/upload</span> 上传 PDF</li>
+                    <li><span class="code">GET /api/task/{id}</span> 查询状态</li>
+                    <li><span class="code">GET /api/result/{id}</span> 获取结果</li>
+                    <li><span class="code">GET /api/health</span> 健康检查</li>
+                    <li>Pydantic 数据校验</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 设计亮点 -->
+        <div class="card" style="--card-accent: #8b5cf6; margin-bottom: 32px;">
+            <div class="card-icon">✨</div>
+            <div class="card-title">关键设计亮点</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 16px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+                    <h4 style="color: var(--accent-teal); margin-bottom: 10px;">🔀 并行 + 串行混合</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">三个专科 Agent 使用 ThreadPoolExecutor 并行执行，最后串行汇总至多学科团队</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+                    <h4 style="color: var(--accent-cyan); margin-bottom: 10px;">⚡ 异步非阻塞</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">FastAPI 异步框架 + 后台线程池，上传响应即时返回，分析不阻塞主请求</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+                    <h4 style="color: var(--accent-amber); margin-bottom: 10px;">📦 Pydantic 校验</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">所有 API 输入输出使用 BaseModel 类型校验，自动生成 OpenAPI 文档</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+                    <h4 style="color: var(--accent-violet); margin-bottom: 10px;">🎨 医疗科技 UI</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">深色主题 + 玻璃态卡片 + 淡入淡出动画，四专家进度网格实时展示</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输出示例 -->
+        <div class="card" style="--card-accent: #14b8a6; margin-bottom: 32px;">
+            <div class="card-icon">📊</div>
+            <div class="card-title">输出示例 — 3个最可能健康问题</div>
+            <div style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 16px; margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+                <p style="color: var(--accent-rose); margin-bottom: 12px;">1. <strong>Health-related anxiety with somatic symptom amplification</strong></p>
+                <p style="color: var(--text-secondary); margin-left: 16px; margin-bottom: 12px;">Reason: The patient exhibits excessive worry about benign physical findings...</p>
+
+                <p style="color: var(--accent-cyan); margin-bottom: 12px;">2. <strong>Early chronic respiratory disease (e.g., mild COPD, asthma)</strong></p>
+                <p style="color: var(--text-secondary); margin-left: 16px; margin-bottom: 12px;">Reason: Pulmonary function testing reveals a mild mixed obstructive-restrictive pattern...</p>
+
+                <p style="color: var(--accent-violet); margin-bottom: 12px;">3. <strong>Subclinical cardiovascular risk with autonomic dysregulation</strong></p>
+                <p style="color: var(--text-secondary); margin-left: 16px;">Reason: While cardiac structure and function are normal...</p>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            基于 <span>FastAPI</span> + <span>LangChain</span> + <span>React 19</span> 构建 · DeepSeek API 驱动
+        </div>
+    </div>
+</body>
+</html>
