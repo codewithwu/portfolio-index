@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据分析Agent | 规则引擎+LangGraph工作流</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0c0f14;
+            --bg-secondary: #141922;
+            --bg-card: #1a1f2a;
+            --accent-amber: #f59e0b;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-violet: #8b5cf6;
+            --accent-rose: #f43f5e;
+            --accent-blue: #3b82f6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            font-family: 'Noto Sans SC', system-ui, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(16, 185, 129, 0.06) 1px, transparent 0);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.12;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-1 { top: -100px; left: 10%; width: 500px; height: 500px; background: var(--accent-emerald); }
+        .glow-2 { bottom: -150px; right: 5%; width: 600px; height: 600px; background: var(--accent-violet); }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 32px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 64px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-emerald);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-emerald) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-subtitle span {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        /* 两列布局 */
+        .two-col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(26, 31, 42, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.7s ease-out backwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent-cyan)), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover::before { opacity: 1; }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon { font-size: 2.2rem; margin-bottom: 16px; }
+        .card-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-title .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 600;
+        }
+
+        .tag-core { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .tag-engine { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-tool { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .tag-flow { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .card-list {
+            list-style: none;
+        }
+
+        .card-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card-list li:last-child { border-bottom: none; }
+
+        .card-list li::before {
+            content: '▸';
+            color: var(--accent-emerald);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .card-list .highlight {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .card-list .code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+        }
+
+        /* 流程图 */
+        .flow-section {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(26, 31, 42, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.7s ease-out 0.5s backwards;
+        }
+
+        .flow-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .flow-title span { color: var(--accent-emerald); }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .flow-node {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 120px;
+            position: relative;
+        }
+
+        .flow-node-main {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1));
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .flow-node-icon { font-size: 1.3rem; margin-bottom: 6px; }
+        .flow-node-title { font-weight: 600; font-size: 0.85rem; }
+        .flow-node-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+
+        .flow-arrow {
+            color: var(--accent-cyan);
+            font-size: 1.2rem;
+        }
+
+        .flow-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            padding: 4px 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 20px;
+        }
+
+        .flow-label-pass { color: var(--accent-emerald); }
+        .flow-label-fail { color: var(--accent-rose); }
+
+        /* 示例框 */
+        .example-box {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+
+        .example-title {
+            font-weight: 600;
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .example-item {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            padding: 6px 0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .example-item::before { content: '•'; color: var(--accent-amber); }
+
+        /* 数据字段 */
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .field-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .field-name { font-weight: 600; color: var(--accent-cyan); font-size: 0.85rem; }
+        .field-count { color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 32px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            animation: fadeInUp 0.7s ease-out 0.7s backwards;
+        }
+
+        .footer span { color: var(--accent-amber); }
+
+        @media (max-width: 1024px) {
+            .two-col { grid-template-columns: 1fr; }
+            .field-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .header h1 { font-size: 2rem; }
+            .container { padding: 40px 16px; }
+            .field-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-tag">📊 数据分析 + 🤖 Agent</div>
+            <h1>数据分析 Agent 系统</h1>
+            <p class="header-subtitle">
+                <span>规则引擎</span> + <span>LangGraph工作流</span> — 汽车销售数据智能查询
+            </p>
+        </div>
+
+        <!-- 核心概念 -->
+        <div class="two-col">
+            <!-- 规则引擎 -->
+            <div class="card" style="--card-accent: #10b981;">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">
+                    RuleEngine 规则引擎
+                    <span class="tag tag-engine">核心</span>
+                </div>
+                <p class="card-desc">基于正则匹配的快速意图识别与参数提取引擎，无需LLM即可解析用户查询</p>
+                <ul class="card-list">
+                    <li><span class="highlight">match(query)</span> → 返回 (意图, 参数)</li>
+                    <li><span class="highlight">_extract_price()</span> 提取价格区间</li>
+                    <li>支持品牌、车型、颜色、销售员识别</li>
+                    <li>两种意图：<span class="code">query_car</span> / <span class="code">query_salesperson</span></li>
+                    <li><span class="highlight">build_response()</span> 构建查询响应</li>
+                </ul>
+                <div class="example-box">
+                    <div class="example-title">匹配示例</div>
+                    <div class="example-item">"查询丰田轿车" → query_car, {brand:丰田, model:轿车}</div>
+                    <div class="example-item">"红色SUV有哪些" → query_car, {model:SUV, color:红色}</div>
+                    <div class="example-item">"不超过6万的车" → query_car, {max_price:60000}</div>
+                    <div class="example-item">"哪个销售员卖得最多" → query_salesperson</div>
+                </div>
+            </div>
+
+            <!-- 数据集 -->
+            <div class="card" style="--card-accent: #3b82f6;">
+                <div class="card-icon">📋</div>
+                <div class="card-title">
+                    汽车销售数据集
+                    <span class="tag tag-core">数据</span>
+                </div>
+                <p class="card-desc">模拟生成的1000条汽车销售记录，时间范围2022-2024年</p>
+                <div class="field-grid">
+                    <div class="field-item">
+                        <div class="field-name">品牌</div>
+                        <div class="field-count">10种</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-name">车型</div>
+                        <div class="field-count">6种</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-name">颜色</div>
+                        <div class="field-count">7种</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-name">销售员</div>
+                        <div class="field-count">5人</div>
+                    </div>
+                    <div class="field-item">
+                        <div class="field-name">价格范围</div>
+                        <div class="field-count">2-8万</div>
+                    </div>
+                </div>
+                <ul class="card-list" style="margin-top: 16px;">
+                    <li><span class="highlight">日期</span>: 销售日期</li>
+                    <li><span class="highlight">年份</span>: 出厂年份 (2015-2022)</li>
+                    <li><span class="highlight">里程/排量/油耗</span>: 车辆参数</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- LangGraph 工作流 -->
+        <div class="flow-section">
+            <div class="flow-title">🔀 <span>LangGraph</span> 工作流 — 条件路由执行</div>
+
+            <!-- 第一行：主流程 -->
+            <div class="flow-row">
+                <div class="flow-node flow-node-main">
+                    <div class="flow-node-icon">📥</div>
+                    <div class="flow-node-title">START</div>
+                    <div class="flow-node-desc">用户查询</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-main">
+                    <div class="flow-node-icon">⚡</div>
+                    <div class="flow-node-title">rule_based_query_node</div>
+                    <div class="flow-node-desc">规则引擎匹配</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node">
+                    <div class="flow-node-icon">🚦</div>
+                    <div class="flow-node-title">check_punchline</div>
+                    <div class="flow-node-desc">判断is_true</div>
+                </div>
+            </div>
+
+            <!-- 条件分支 -->
+            <div class="flow-row">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <span class="flow-label flow-label-pass">Pass (is_true=True)</span>
+                    <span class="flow-arrow">↓</span>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <span class="flow-label flow-label-fail">Fail (is_true=False)</span>
+                    <span class="flow-arrow">↓</span>
+                </div>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node flow-node-main">
+                    <div class="flow-node-icon">🤖</div>
+                    <div class="flow-node-title">call_llm</div>
+                    <div class="flow-node-desc">基础LLM处理</div>
+                </div>
+                <span class="flow-arrow">←→</span>
+                <div class="flow-node">
+                    <div class="flow-node-icon">🔧</div>
+                    <div class="flow-node-title">call_llm_tool</div>
+                    <div class="flow-node-desc">调用query_car_data工具</div>
+                </div>
+            </div>
+
+            <div class="flow-row">
+                <span class="flow-label flow-label-fail" style="margin-left: 40px;">tool也失败 →</span>
+                <div class="flow-node" style="border-color: rgba(244, 63, 94, 0.3);">
+                    <div class="flow-node-icon">❌</div>
+                    <div class="flow-node-title">false_message</div>
+                    <div class="flow-node-desc">返回无法回答</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-main">
+                    <div class="flow-node-icon">🏁</div>
+                    <div class="flow-node-title">END</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 两种查询方式 -->
+        <div class="two-col">
+            <!-- 规则引擎查询 -->
+            <div class="card" style="--card-accent: #f59e0b;">
+                <div class="card-icon">🎯</div>
+                <div class="card-title">
+                    rule_based_query 工具
+                    <span class="tag tag-tool">NLU</span>
+                </div>
+                <p class="card-desc">自然语言理解风格的查询工具，自动从用户输入中识别意图和参数</p>
+                <ul class="card-list">
+                    <li>输入：<span class="code">"张三卖了多少辆车"</span></li>
+                    <li>内部调用 <span class="highlight">RuleEngine.match()</span></li>
+                    <li>自动解析品牌/车型/价格等参数</li>
+                    <li>无需手动指定查询字段</li>
+                    <li>返回格式化结果字符串</li>
+                </ul>
+                <div class="example-box">
+                    <div class="example-title">调用链</div>
+                    <div class="example-item">用户: "查询丰田轿车的价格"</div>
+                    <div class="example-item">→ rule_based_query.invoke()</div>
+                    <div class="example-item">→ engine.match() → query_car</div>
+                    <div class="example-item">→ engine._query_car(df, params)</div>
+                </div>
+            </div>
+
+            <!-- 语义查询 -->
+            <div class="card" style="--card-accent: #8b5cf6;">
+                <div class="card-icon">🔍</div>
+                <div class="card-title">
+                    query_car_data 工具
+                    <span class="tag tag-tool">语义</span>
+                </div>
+                <p class="card-desc">传统的多参数组合查询工具，需要LLM理解并填充参数</p>
+                <ul class="card-list">
+                    <li>参数：<span class="code">brand</span>, <span class="code">model</span>, <span class="code">color</span></li>
+                    <li>参数：<span class="code">sales_person</span></li>
+                    <li>参数：<span class="code">min_price</span>, <span class="code">max_price</span></li>
+                    <li>参数：<span class="code">limit</span> (默认10条)</li>
+                    <li>直接对DataFrame进行条件筛选</li>
+                </ul>
+                <div class="example-box">
+                    <div class="example-title">参数示例</div>
+                    <div class="example-item">brand="丰田", model="轿车"</div>
+                    <div class="example-item">color="红色", max_price=60000</div>
+                    <div class="example-item">sales_person="张三", limit=10</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- State定义 -->
+        <div class="card" style="--card-accent: #06b6d4; margin-bottom: 32px;">
+            <div class="card-icon">📦</div>
+            <div class="card-title">
+                State 定义 — MessagesState + 自定义字段
+                <span class="tag tag-flow">状态</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 16px;">
+                <div>
+                    <p class="card-desc">继承自 LangGraph 的 MessagesState</p>
+                    <ul class="card-list">
+                        <li><span class="highlight">messages</span>: 对话消息历史</li>
+                        <li>自动支持多轮对话</li>
+                        <li>LLM调用结果追加到此</li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="card-desc">自定义状态字段</p>
+                    <ul class="card-list">
+                        <li><span class="highlight">is_true: bool = False</span></li>
+                        <li>标记规则引擎是否匹配成功</li>
+                        <li>控制条件路由的分支选择</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 对比卡片 -->
+        <div class="card" style="--card-accent: #f43f5e; margin-bottom: 32px;">
+            <div class="card-icon">⚖️</div>
+            <div class="card-title">两种方案对比</div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 16px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+                    <h4 style="color: var(--accent-amber); margin-bottom: 12px;">规则引擎方案</h4>
+                    <ul class="card-list">
+                        <li>✅ <span class="highlight">快速</span> — 无需LLM调用</li>
+                        <li>✅ <span class="highlight">确定性</span> — 正则匹配，结果可预期</li>
+                        <li>✅ <span class="highlight">低成本</span> — 节省API费用</li>
+                        <li>❌ 覆盖有限，需要预定义模式</li>
+                        <li>❌ 复杂查询难以处理</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 16px; border-radius: 10px;">
+                    <h4 style="color: var(--accent-violet); margin-bottom: 12px;">LLM + Tools方案</h4>
+                    <ul class="card-list">
+                        <li>✅ <span class="highlight">灵活</span> — 自然语言理解</li>
+                        <li>✅ <span class="highlight">泛化</span> — 处理未见过的问题</li>
+                        <li>✅ <span class="highlight">智能</span> — 复杂推理能力</li>
+                        <li>❌ 较慢 — 需要LLM推理</li>
+                        <li>❌ 成本高 — API调用费用</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            基于 <span>LangChain</span> + <span>LangGraph</span> 构建 · 规则引擎 + 工作流混合架构
+        </div>
+    </div>
+</body>
+</html>
