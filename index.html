@@ -179,7 +179,6 @@
                     <a href="${item.path}" class="card">
                         <div class="card-name">${item.name}</div>
                         <div class="card-desc">${item.description || ''}</div>
-                        ${item.github ? `<span class="card-github">${item.github}</span>` : ''}
                     </a>
                 `).join('');
             } catch (e) {
