@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeartMula Web - AI 音乐智能创作平台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0f0f1a;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #1f1f35;
+            --accent-pink: #ec4899;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            font-family: 'Noto Sans SC', system-ui, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(236, 72, 153, 0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-1 { top: -100px; left: 10%; width: 500px; height: 500px; background: var(--accent-pink); }
+        .glow-2 { bottom: -150px; right: 5%; width: 600px; height: 600px; background: var(--accent-purple); }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 32px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 64px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.05));
+            border: 1px solid rgba(236, 72, 153, 0.3);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-pink);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-pink) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-subtitle span {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(31, 31, 53, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.7s ease-out backwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent-pink)), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover::before { opacity: 1; }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon { font-size: 2.2rem; margin-bottom: 16px; }
+        .card-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-title .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 600;
+        }
+
+        .tag-core { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+        .tag-backend { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .tag-frontend { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+        .tag-agent { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-model { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .card-list {
+            list-style: none;
+        }
+
+        .card-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card-list li:last-child { border-bottom: none; }
+
+        .card-list li::before {
+            content: '▸';
+            color: var(--accent-pink);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .card-list .highlight {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .card-list .code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+        }
+
+        /* 功能卡片 */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .feature-icon { font-size: 2rem; margin-bottom: 12px; }
+        .feature-name { font-weight: 700; color: var(--accent-pink); margin-bottom: 8px; }
+        .feature-desc { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* 标签表格 */
+        .tag-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .tag-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .tag-category { font-weight: 600; color: var(--accent-cyan); font-size: 0.85rem; }
+        .tag-count { color: var(--accent-amber); font-size: 0.75rem; margin-top: 4px; }
+        .tag-example { color: var(--text-muted); font-size: 0.7rem; margin-top: 4px; }
+
+        /* 流程图 */
+        .flow-section {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(31, 31, 53, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.7s ease-out 0.5s backwards;
+        }
+
+        .flow-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .flow-title span { color: var(--accent-pink); }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .flow-node {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 20px;
+            text-align: center;
+            min-width: 130px;
+        }
+
+        .flow-node.main {
+            border-color: rgba(236, 72, 153, 0.4);
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(236, 72, 153, 0.05));
+        }
+
+        .flow-arrow { color: var(--accent-pink); font-size: 1.3rem; }
+
+        /* Fallback 流程 */
+        .fallback-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .fallback-title {
+            font-weight: 700;
+            color: var(--accent-emerald);
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+
+        .fallback-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        .fallback-step-num {
+            background: var(--accent-emerald);
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .fallback-success { color: var(--accent-emerald); }
+        .fallback-fail { color: var(--accent-rose); }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 32px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            animation: fadeInUp 0.7s ease-out 0.7s backwards;
+        }
+
+        .footer span { color: var(--accent-amber); }
+
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+            .feature-grid { grid-template-columns: 1fr; }
+            .tag-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 2rem; }
+            .container { padding: 40px 16px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .tag-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-tag">🎵 AI 音乐创作</div>
+            <h1>HeartMula Web</h1>
+            <p class="header-subtitle">
+                <span>端到端 AI 音乐创作平台</span> — 基于 HeartMuLa 开源模型家族
+            </p>
+            <a href="https://github.com/codewithwu/heartmula-web-" style="display: inline-block; margin-top: 16px; color: var(--accent-emerald); text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/heartmula-web-</a>
+        </div>
+
+        <!-- 三大核心功能 -->
+        <div class="card" style="--card-accent: #ec4899; margin-bottom: 32px;">
+            <div class="card-icon">🎯</div>
+            <div class="card-title">
+                核心功能
+                <span class="tag tag-core">Core</span>
+            </div>
+            <p class="card-desc">基于 HeartMuLa 开源模型家族，提供完整的 AI 音乐创作流程</p>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎤</div>
+                    <div class="feature-name">音频转歌词</div>
+                    <div class="feature-desc">上传音频文件<br>AI 自动识别提取歌词</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎼</div>
+                    <div class="feature-name">音乐生成</div>
+                    <div class="feature-desc">输入歌词或标签组合<br>AI 创作专属音乐</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎧</div>
+                    <div class="feature-name">成品欣赏</div>
+                    <div class="feature-desc">体验 AI 创作的<br>精彩音乐作品</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技术栈 -->
+        <div class="grid">
+            <!-- 后端 -->
+            <div class="card" style="--card-accent: #3b82f6;">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">
+                    后端架构
+                    <span class="tag tag-backend">Backend</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">FastAPI</span> 高性能异步 API</li>
+                    <li><span class="highlight">PyTorch</span> 深度学习框架</li>
+                    <li><span class="highlight">LangChain</span> LLM Agent 系统</li>
+                    <li><span class="highlight">PostgreSQL</span> Checkpoint 存储</li>
+                    <li><span class="highlight">uv</span> 包管理工具</li>
+                </ul>
+            </div>
+
+            <!-- 前端 -->
+            <div class="card" style="--card-accent: #a855f7;">
+                <div class="card-icon">🎨</div>
+                <div class="card-title">
+                    前端架构
+                    <span class="tag tag-frontend">Frontend</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">原生 HTML5/CSS3/JS</span></li>
+                    <li>无框架依赖，轻量快速</li>
+                    <li><span class="highlight">Lucide Icons</span> 开源图标</li>
+                    <li><span class="highlight">Web Audio API</span> 音频处理</li>
+                    <li>响应式设计，适配多端</li>
+                </ul>
+            </div>
+
+            <!-- AI 模型 -->
+            <div class="card" style="--card-accent: #f59e0b;">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">
+                    AI 模型组件
+                    <span class="tag tag-model">Model</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">HeartTranscriptor</span> 语音转歌词</li>
+                    <li><span class="highlight">HeartMuLa-oss-3B</span> 歌词生成音乐 (3B)</li>
+                    <li><span class="highlight">HeartCodec</span> 音频编解码压缩</li>
+                    <li><span class="highlight">ModelScope</span> 模型下载管理</li>
+                    <li>存储于 <span class="code">ckpt/</span> 和 <span class="code">heartlib/</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 系统架构 -->
+        <div class="flow-section">
+            <div class="flow-title">🏗️ <span>系统架构</span> — 分层设计</div>
+
+            <div class="flow-row">
+                <div class="flow-node main">
+                    <div style="font-weight: 700; color: var(--accent-pink);">FastAPI Server</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">端口 5000</div>
+                </div>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node">静态文件<br><span class="code">/static/*</span></div>
+                <span class="flow-arrow">|</span>
+                <div class="flow-node">RESTful API<br><span class="code">/api/v1/*</span></div>
+            </div>
+
+            <div class="flow-row">
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node">Service Layer<br><span style="font-size: 0.7rem; color: var(--text-muted);">单例模式，懒加载</span></div>
+                <span class="flow-arrow">|</span>
+                <div class="flow-node">Agent System<br><span style="font-size: 0.7rem; color: var(--text-muted);">LangChain</span></div>
+                <span class="flow-arrow">|</span>
+                <div class="flow-node">Model Layer<br><span style="font-size: 0.7rem; color: var(--text-muted);">HeartMuLa</span></div>
+            </div>
+        </div>
+
+        <!-- 标签系统 -->
+        <div class="card" style="--card-accent: #06b6d4; margin-bottom: 32px;">
+            <div class="card-icon">🏷️</div>
+            <div class="card-title">
+                标签系统 — 7 大类 100+ 标签
+                <span class="tag tag-core">精细化控制</span>
+            </div>
+            <div class="tag-grid">
+                <div class="tag-item">
+                    <div class="tag-category">流派 Genres</div>
+                    <div class="tag-count">21 个标签</div>
+                    <div class="tag-example">pop, rock, jazz, hip-hop...</div>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-category">乐器 Instruments</div>
+                    <div class="tag-count">20 个标签</div>
+                    <div class="tag-example">piano, guitar, bass, drum...</div>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-category">情绪 Mood</div>
+                    <div class="tag-count">20 个标签</div>
+                    <div class="tag-example">happy, sad, romantic, calm...</div>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-category">节奏 Tempo</div>
+                    <div class="tag-count">12 个标签</div>
+                    <div class="tag-example">fast, slow, groove, ambient...</div>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-category">风格 Style</div>
+                    <div class="tag-count">17 个标签</div>
+                    <div class="tag-example">acoustic, orchestral, cinematic...</div>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-category">场合 Occasion</div>
+                    <div class="tag-count">14 个标签</div>
+                    <div class="tag-example">wedding, party, meditation...</div>
+                </div>
+                <div class="tag-item">
+                    <div class="tag-category">人声 Vocal</div>
+                    <div class="tag-count">7 个标签</div>
+                    <div class="tag-example">male, female, choir...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent 系统 -->
+        <div class="grid">
+            <!-- Agent 组件 -->
+            <div class="card" style="--card-accent: #10b981;">
+                <div class="card-icon">🤖</div>
+                <div class="card-title">
+                    Agent 系统
+                    <span class="tag tag-agent">LangChain</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">AgentManager</span> 全局单例管理</li>
+                    <li><span class="highlight">LLMFactory</span> 双模型动态切换</li>
+                    <li><span class="highlight">Middleware</span> 动态提示词注入</li>
+                    <li><span class="highlight">Prompts</span> 歌词格式化模板</li>
+                    <li><span class="highlight">Context</span> Agent 上下文</li>
+                </ul>
+            </div>
+
+            <!-- API 端点 -->
+            <div class="card" style="--card-accent: #ec4899;">
+                <div class="card-icon">🔌</div>
+                <div class="card-title">API 端点</div>
+                <ul class="card-list">
+                    <li><span class="code">POST /api/v1/transcribe</span> 音频转歌词</li>
+                    <li><span class="code">POST /api/v1/generate</span> 歌词/标签生成</li>
+                    <li><span class="code">GET /api/v1/tags</span> 获取标签选项</li>
+                    <li><span class="code">POST /api/v1/lyrics/check</span> 歌词校验</li>
+                    <li><span class="code">GET /api/v1/health</span> 健康检查</li>
+                </ul>
+            </div>
+
+            <!-- 前端页面 -->
+            <div class="card" style="--card-accent: #a855f7;">
+                <div class="card-icon">📄</div>
+                <div class="card-title">前端页面</div>
+                <ul class="card-list">
+                    <li><span class="highlight">/</span> 首页 — 功能入口</li>
+                    <li><span class="highlight">/static/lyrics.html</span> 音频转歌词</li>
+                    <li><span class="highlight">/static/generate.html</span> 音乐生成</li>
+                    <li><span class="highlight">/static/showcase.html</span> 成品欣赏</li>
+                    <li>本地音频预览，无需服务器中转</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 容错机制 -->
+        <div class="card" style="--card-accent: #10b981; margin-bottom: 32px;">
+            <div class="card-icon">🔄</div>
+            <div class="card-title">双模型 Fallback 容错机制</div>
+            <div class="fallback-container">
+                <div class="fallback-step">
+                    <span class="fallback-step-num">1</span>
+                    <span>请求进入 → 尝试使用 <span class="highlight">LongCat</span> 模型处理</span>
+                </div>
+                <div class="fallback-step">
+                    <span class="fallback-step-num">2</span>
+                    <span class="fallback-success">✓ 成功 → 返回格式化歌词</span>
+                </div>
+                <div class="fallback-step">
+                    <span class="fallback-step-num">3</span>
+                    <span class="fallback-fail">✗ 失败 → Middleware 自动切换至 <span class="highlight">Ling</span> 模型</span>
+                </div>
+                <div class="fallback-step">
+                    <span class="fallback-step-num">4</span>
+                    <span>重新尝试处理 → 成功返回 / 失败返回错误</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技术亮点 -->
+        <div class="card" style="--card-accent: #f59e0b; margin-bottom: 32px;">
+            <div class="card-icon">✨</div>
+            <div class="card-title">技术亮点</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="color: var(--accent-pink); font-weight: 600; margin-bottom: 6px;">🧠 模型全栈自研</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">HeartMuLa 开源模型家族，覆盖语音识别与音乐生成全链路</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="color: var(--accent-emerald); font-weight: 600; margin-bottom: 6px;">🔗 LLM 智能预处理</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">LangChain Agent 实现歌词格式化与校验</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="color: var(--accent-cyan); font-weight: 600; margin-bottom: 6px;">🔄 双模型 Fallback</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">LongCat/Ling 自动切换，保障服务稳定性</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="color: var(--accent-purple); font-weight: 600; margin-bottom: 6px;">⚡ 懒加载单例</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Service 层单例模式，按需加载模型资源</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="color: var(--accent-amber); font-weight: 600; margin-bottom: 6px;">🎯 轻量级前端</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">纯原生实现，无框架依赖，首屏加载极快</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="color: var(--accent-rose); font-weight: 600; margin-bottom: 6px;">🏷️ 丰富标签系统</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">7 大类 100+ 标签，支持精细化音乐风格控制</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            基于 <span>FastAPI</span> + <span>PyTorch</span> + <span>LangChain</span> 构建 · HeartMuLa 开源模型驱动
+        </div>
+    </div>
+</body>
+</html>

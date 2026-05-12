@@ -5,5 +5,26 @@
         "github": "https://github.com/codewithwu/car-sales-agent",
         "star": 1,
         "description": "基于规则引擎 + LangGraph 工作流的汽车销售数据智能查询系统"
+    },
+    {
+        "name": "MediMind 多智能体医疗诊断系统",
+        "path": "html/MediMind_多智能体医疗诊断系统.html",
+        "github": "https://github.com/codewithwu/MediMind",
+        "star": 1,
+        "description": "AI 多智能体 协作医疗诊断分析 — 模拟多学科专家团队"
+    },
+    {
+        "name": "HeartMula_AI音乐智能创作平台",
+        "path": "html/HeartMula_AI音乐智能创作平台.html",
+        "github": "https://github.com/codewithwu/heartmula-web-",
+        "star": 1,
+        "description": "端到端 AI 音乐创作平台 — 基于 HeartMuLa 开源模型家族"
+    },
+    {
+        "name": "AGV_Ops_Agent_智能运维助手",
+        "path": "html/AGV_Ops_Agent_智能运维助手.html",
+        "github": "https://github.com/codewithwu/agv_ops_agent",
+        "star": 1,
+        "description": "基于检索增强生成的 AGV 故障诊断问答系统"
     }
 ]

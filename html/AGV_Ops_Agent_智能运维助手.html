@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGV Ops Agent 智能运维助手</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0f14;
+            --bg-secondary: #111922;
+            --bg-card: #141d28;
+            --accent-teal: #0d9488;
+            --accent-emerald: #10b981;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --accent-purple: #8b5cf6;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg-primary);
+            font-family: 'Noto Sans SC', system-ui, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(13, 148, 136, 0.06) 1px, transparent 0);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.1;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-1 { top: -100px; left: 10%; width: 500px; height: 500px; background: var(--accent-teal); }
+        .glow-2 { bottom: -150px; right: 5%; width: 600px; height: 600px; background: var(--accent-purple); }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 32px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 64px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(13, 148, 136, 0.05));
+            border: 1px solid rgba(13, 148, 136, 0.3);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent-teal);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+
+        .header h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 3rem;
+            font-weight: 700;
+            letter-spacing: 6px;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-teal) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .header-subtitle span {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(20, 29, 40, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.7s ease-out backwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent-teal)), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover::before { opacity: 1; }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-icon { font-size: 2.2rem; margin-bottom: 16px; }
+        .card-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-title .tag {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+            font-weight: 600;
+        }
+
+        .tag-backend { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .tag-frontend { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+        .tag-core { background: rgba(13, 148, 136, 0.2); color: #2dd4bf; }
+        .tag-rag { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .tag-security { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 16px;
+            line-height: 1.6;
+        }
+
+        .card-list {
+            list-style: none;
+        }
+
+        .card-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .card-list li:last-child { border-bottom: none; }
+
+        .card-list li::before {
+            content: '▸';
+            color: var(--accent-teal);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .card-list .highlight {
+            color: var(--accent-amber);
+            font-weight: 600;
+        }
+
+        .card-list .code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--accent-cyan);
+        }
+
+        /* LLM 模型表格 */
+        .model-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .model-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 14px;
+            border-radius: 10px;
+        }
+
+        .model-role { font-weight: 600; color: var(--accent-cyan); font-size: 0.85rem; }
+        .model-provider { color: var(--text-muted); font-size: 0.75rem; margin-top: 4px; }
+        .model-name { font-family: 'JetBrains Mono', monospace; color: var(--accent-amber); font-size: 0.8rem; }
+
+        /* 三级RBAC */
+        .rbac-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .rbac-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .rbac-role { font-weight: 700; color: var(--accent-rose); font-size: 0.9rem; }
+        .rbac-perm { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
+
+        /* 流程图 */
+        .flow-section {
+            background: linear-gradient(160deg, var(--bg-card) 0%, rgba(20, 29, 40, 0.5) 100%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 32px;
+            animation: fadeInUp 0.7s ease-out 0.5s backwards;
+        }
+
+        .flow-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .flow-title span { color: var(--accent-teal); }
+
+        .flow-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .flow-node {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 20px;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .flow-node.main {
+            border-color: rgba(13, 148, 136, 0.4);
+            background: linear-gradient(135deg, rgba(13, 148, 136, 0.1), rgba(13, 148, 136, 0.05));
+        }
+
+        .flow-node.rag {
+            border-color: rgba(16, 185, 129, 0.4);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+        }
+
+        .flow-arrow { color: var(--accent-teal); font-size: 1.3rem; }
+
+        /* 中间件栈 */
+        .middleware-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .middleware-item {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .middleware-name { font-weight: 600; color: var(--accent-purple); font-size: 0.85rem; }
+        .middleware-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* 底部 */
+        .footer {
+            text-align: center;
+            padding: 32px 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            animation: fadeInUp 0.7s ease-out 0.7s backwards;
+        }
+
+        .footer span { color: var(--accent-amber); }
+
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: repeat(2, 1fr); }
+            .model-grid { grid-template-columns: 1fr; }
+            .rbac-grid { grid-template-columns: 1fr; }
+            .middleware-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 640px) {
+            .grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 2rem; }
+            .container { padding: 40px 16px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .middleware-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-tag">🤖 RAG + LangGraph</div>
+            <h1>AGV Ops Agent</h1>
+            <p class="header-subtitle">
+                <span>智能运维助手</span> — 基于检索增强生成的 AGV 故障诊断问答系统
+            </p>
+            <a href="https://github.com/codewithwu/agv_ops_agent" style="display: inline-block; margin-top: 16px; color: var(--accent-emerald); text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/agv_ops_agent</a>
+        </div>
+
+        <!-- 技术栈 -->
+        <div class="grid">
+            <!-- 后端技术栈 -->
+            <div class="card" style="--card-accent: #3b82f6;">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">
+                    后端技术栈
+                    <span class="tag tag-backend">Backend</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">FastAPI</span> 0.135.3+ 异步Web框架</li>
+                    <li><span class="highlight">PostgreSQL 14+</span> + PGVector 向量</li>
+                    <li><span class="highlight">SQLAlchemy 2.0</span> 异步ORM</li>
+                    <li><span class="highlight">LangChain</span> / <span class="highlight">LangGraph</span></li>
+                    <li><span class="highlight">JWT</span> + bcrypt 认证</li>
+                    <li><span class="highlight">LangFuse</span> 4.5.1+ 可观测性</li>
+                </ul>
+            </div>
+
+            <!-- 前端技术栈 -->
+            <div class="card" style="--card-accent: #8b5cf6;">
+                <div class="card-icon">🎨</div>
+                <div class="card-title">
+                    前端技术栈
+                    <span class="tag tag-frontend">Frontend</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">React 18+</span> + TypeScript</li>
+                    <li><span class="highlight">Ant Design</span> 6.3.5+ UI组件</li>
+                    <li><span class="highlight">Vite</span> 构建工具</li>
+                    <li><span class="highlight">Zustand</span> 5.0.12 状态管理</li>
+                    <li><span class="highlight">TailwindCSS</span> 4.2.2 样式</li>
+                    <li>React Router 路由守卫</li>
+                </ul>
+            </div>
+
+            <!-- LLM多模型 -->
+            <div class="card" style="--card-accent: #10b981;">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">
+                    LLM 多模型支持
+                    <span class="tag tag-rag">Multi-Model</span>
+                </div>
+                <div class="model-grid">
+                    <div class="model-card">
+                        <div class="model-role">主模型（聊天）</div>
+                        <div class="model-provider">Ollama 本地</div>
+                        <div class="model-name">qwen3.5:9b</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-role">向量化模型</div>
+                        <div class="model-provider">Ollama 本地</div>
+                        <div class="model-name">qwen3-embedding:8b</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-role">云端备选</div>
+                        <div class="model-provider">OpenAI/LongCat</div>
+                        <div class="model-name">LongCat-Flash-Chat</div>
+                    </div>
+                    <div class="model-card">
+                        <div class="model-role">紧急回退</div>
+                        <div class="model-provider">Ling</div>
+                        <div class="model-name">Ling-1T</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心模块 -->
+        <div class="card" style="--card-accent: #0d9488; margin-bottom: 32px;">
+            <div class="card-icon">🏗️</div>
+            <div class="card-title">
+                核心模块
+                <span class="tag tag-core">Core</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px;">
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="font-weight: 700; color: var(--accent-cyan);">📄 文档处理</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">PDF/MD/TXT 加载<br>RecursiveTextSplitter<br>自动分块</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="font-weight: 700; color: var(--accent-emerald);">🔢 向量嵌入</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">Ollama 本地嵌入<br>OpenAI 兼容嵌入<br>工厂模式切换</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="font-weight: 700; color: var(--accent-purple);">💾 向量存储</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">PGVector 封装<br>延迟初始化<br>相似度检索</div>
+                </div>
+                <div style="background: rgba(0,0,0,0.2); padding: 14px; border-radius: 8px;">
+                    <div style="font-weight: 700; color: var(--accent-amber);">📤 文件上传</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">MD5 去重检测<br>UUID 文件名<br>后台异步向量化</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RAG Agent 架构 -->
+        <div class="flow-section">
+            <div class="flow-title">🔄 <span>RAG Agent</span> 工作流程</div>
+
+            <div class="flow-row">
+                <div class="flow-node main">
+                    <div style="font-weight: 700; color: var(--accent-teal);">用户消息</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">POST /api/v1/agent/chat</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node">
+                    <div style="font-weight: 700;">JWT 认证</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">get_current_user</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node main">
+                    <div style="font-weight: 700;">AgentManager</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">session_id → agent实例</div>
+                </div>
+            </div>
+
+            <div class="flow-row">
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node rag">
+                    <div style="font-weight: 700;">中间件链</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">动态提示词 / 角色过滤<br>模型回退 / 错误处理</div>
+                </div>
+            </div>
+
+            <div class="flow-row">
+                <span class="flow-arrow">↓</span>
+            </div>
+
+            <div class="flow-row">
+                <div class="flow-node main">
+                    <div style="font-weight: 700;">vector_search 工具</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">PGVector similarity_search</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node">
+                    <div style="font-weight: 700;">LLM 生成响应</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">结合检索结果回答</div>
+                </div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node main">
+                    <div style="font-weight: 700;">返回结果</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">流式 SSE / 完整响应</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间件栈 -->
+        <div class="card" style="--card-accent: #8b5cf6; margin-bottom: 32px;">
+            <div class="card-icon">🔧</div>
+            <div class="card-title">中间件栈 — 6 层中间件</div>
+            <div class="middleware-grid">
+                <div class="middleware-item">
+                    <div class="middleware-name">dynamic_system_prompt</div>
+                    <div class="middleware-desc">AGV关键词检测<br>自动切换RAG模式</div>
+                </div>
+                <div class="middleware-item">
+                    <div class="middleware-name">role_based_tools</div>
+                    <div class="middleware-desc">根据角色<br>过滤可用工具</div>
+                </div>
+                <div class="middleware-item">
+                    <div class="middleware-name">model_fallback</div>
+                    <div class="middleware-desc">主模型故障<br>自动回退Ling</div>
+                </div>
+                <div class="middleware-item">
+                    <div class="middleware-name">handle_tool_errors</div>
+                    <div class="middleware-desc">优雅捕获<br>工具异常</div>
+                </div>
+                <div class="middleware-item">
+                    <div class="middleware-name">trim_messages</div>
+                    <div class="middleware-desc">裁剪历史消息<br>适应上下文窗口</div>
+                </div>
+                <div class="middleware-item">
+                    <div class="middleware-name">delete_old_messages</div>
+                    <div class="middleware-desc">仅保留<br>最近2条消息</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API端点 + 认证 -->
+        <div class="grid">
+            <!-- API端点 -->
+            <div class="card" style="--card-accent: #06b6d4;">
+                <div class="card-icon">🔌</div>
+                <div class="card-title">API 端点</div>
+                <ul class="card-list">
+                    <li><span class="code">POST /auth/register</span> 用户注册</li>
+                    <li><span class="code">POST /auth/login</span> 登录(JWT)</li>
+                    <li><span class="code">POST /auth/refresh</span> 刷新令牌</li>
+                    <li><span class="code">POST /files/upload</span> 上传文件</li>
+                    <li><span class="code">POST /agent/chat</span> RAG问答</li>
+                    <li><span class="code">POST /agent/chat/stream</span> 流式SSE</li>
+                </ul>
+            </div>
+
+            <!-- 认证机制 -->
+            <div class="card" style="--card-accent: #f59e0b;">
+                <div class="card-icon">🔐</div>
+                <div class="card-title">
+                    JWT 认证机制
+                    <span class="tag tag-security">Security</span>
+                </div>
+                <ul class="card-list">
+                    <li><span class="highlight">访问令牌</span> 30分钟有效期</li>
+                    <li><span class="highlight">刷新令牌</span> 7天有效期</li>
+                    <li><span class="highlight">令牌载荷</span> username, user_id, role</li>
+                    <li><span class="highlight">登出</span> 令牌加入内存黑名单</li>
+                    <li><span class="highlight">bcrypt</span> 密码哈希存储</li>
+                </ul>
+            </div>
+
+            <!-- 三级RBAC -->
+            <div class="card" style="--card-accent: #f43f5e;">
+                <div class="card-icon">👥</div>
+                <div class="card-title">三级 RBAC 权限</div>
+                <div class="rbac-grid">
+                    <div class="rbac-item">
+                        <div class="rbac-role">ADMIN</div>
+                        <div class="rbac-perm">用户管理<br>文件上传删除<br>对话</div>
+                    </div>
+                    <div class="rbac-item">
+                        <div class="rbac-role">OPERATOR</div>
+                        <div class="rbac-perm">上传文件(自己)<br>对话</div>
+                    </div>
+                    <div class="rbac-item">
+                        <div class="rbac-role">VIEWER</div>
+                        <div class="rbac-perm">仅对话</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 持久化 + 工具 -->
+        <div class="grid">
+            <!-- Postgres持久化 -->
+            <div class="card" style="--card-accent: #10b981;">
+                <div class="card-icon">💾</div>
+                <div class="card-title">PostgreSQL 统一持久化</div>
+                <ul class="card-list">
+                    <li><span class="highlight">PostgresSaver</span> 对话历史持久化</li>
+                    <li><span class="highlight">PostgresStore</span> 用户偏好键值存储</li>
+                    <li><span class="highlight">Users 表</span> 角色权限管理</li>
+                    <li><span class="highlight">Files 表</span> MD5去重文件元数据</li>
+                    <li>Alembic 数据库迁移</li>
+                </ul>
+            </div>
+
+            <!-- Agent工具集 -->
+            <div class="card" style="--card-accent: #8b5cf6;">
+                <div class="card-icon">🛠️</div>
+                <div class="card-title">Agent 工具集</div>
+                <ul class="card-list">
+                    <li><span class="highlight">vector_search</span> PGVector文档检索</li>
+                    <li><span class="highlight">save_user_preference</span> 保存偏好</li>
+                    <li><span class="highlight">get_user_preference</span> 获取偏好</li>
+                    <li>工厂模式 LLM provider 切换</li>
+                    <li>Session 级 Agent 实例隔离</li>
+                </ul>
+            </div>
+
+            <!-- 核心技术亮点 -->
+            <div class="card" style="--card-accent: #f59e0b;">
+                <div class="card-icon">✨</div>
+                <div class="card-title">技术亮点</div>
+                <ul class="card-list">
+                    <li>多模型 LLM/嵌入工厂模式</li>
+                    <li>基于 session_id 的多实例管理</li>
+                    <li>动态提示词路由（AGV关键词检测）</li>
+                    <li>文件 MD5 自动去重</li>
+                    <li>后台异步向量化不阻塞主请求</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 底部 -->
+        <div class="footer">
+            基于 <span>FastAPI</span> + <span>LangGraph</span> + <span>PGVector</span> + <span>React</span> 构建 · Python 3.12+ | 生产就绪
+        </div>
+    </div>
+</body>
+</html>
