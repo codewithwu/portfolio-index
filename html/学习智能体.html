@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学习智能体 | 知识卡片</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #0a0a0f;
+            color: #e8e8f0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .tag-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .tag-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .tag-green { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .tag-orange { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tag-red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .tag-cyan { background: rgba(34, 211, 238, 0.2); color: #5eead4; border: 1px solid rgba(34, 211, 238, 0.3); }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #a5b4fc 50%, #c084fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 16px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: linear-gradient(135deg, rgba(30, 30, 45, 0.9) 0%, rgba(20, 20, 35, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 20px 20px 0 0;
+        }
+        .card-blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .card-purple::before { background: linear-gradient(90deg, #8b5cf6, #a855f7); }
+        .card-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .card-orange::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .card-red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .card-cyan::before { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 18px;
+        }
+        .card-blue .card-icon { background: rgba(59, 130, 246, 0.15); }
+        .card-purple .card-icon { background: rgba(168, 85, 247, 0.15); }
+        .card-green .card-icon { background: rgba(34, 197, 94, 0.15); }
+        .card-orange .card-icon { background: rgba(245, 158, 11, 0.15); }
+        .card-red .card-icon { background: rgba(239, 68, 68, 0.15); }
+        .card-cyan .card-icon { background: rgba(6, 182, 212, 0.15); }
+        .card-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        .card ul {
+            list-style: none;
+        }
+        .card li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #c5c5d5;
+        }
+        .card li:last-child {
+            border-bottom: none;
+        }
+        .card li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+        .card-blue li::before { background: #3b82f6; }
+        .card-purple li::before { background: #8b5cf6; }
+        .card-green li::before { background: #10b981; }
+        .card-orange li::before { background: #f59e0b; }
+        .card-red li::before { background: #ef4444; }
+        .card-cyan li::before { background: #06b6d4; }
+        .highlight {
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+            color: #fbbf24;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-blue {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+            color: #60a5fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-purple {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.1));
+            color: #c084fc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-green {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+            color: #4ade80;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-orange {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+            color: #fbbf24;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-cyan {
+            background: linear-gradient(90deg, rgba(6, 182, 212, 0.2), rgba(6, 182, 212, 0.1));
+            color: #5eead4;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .flow-section {
+            background: linear-gradient(135deg, rgba(30, 30, 45, 0.9) 0%, rgba(20, 20, 35, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+        .flow-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 20px 0;
+        }
+        .flow-node {
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .flow-node-coordinator { background: rgba(99, 102, 241, 0.2); color: #60a5fa; border: 1px solid rgba(99, 102, 241, 0.3); }
+        .flow-node-profile { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .flow-node-agent { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .flow-node-execute { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .flow-node-start { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .flow-arrow {
+            color: #555;
+            font-size: 18px;
+        }
+        .agent-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .agent-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .agent-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .agent-card-desc {
+            font-size: 12px;
+            color: #888;
+        }
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #a5b4fc;
+            margin: 4px;
+        }
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .stat-blue { color: #60a5fa; }
+        .stat-purple { color: #c084fc; }
+        .stat-green { color: #4ade80; }
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #555;
+            font-size: 13px;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 28px; }
+            .grid { grid-template-columns: 1fr; }
+            .container { padding: 20px 16px; }
+            .flow-diagram { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+            .stats-row { gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="tag-row">
+                <span class="tag tag-blue">LangGraph</span>
+                <span class="tag tag-purple">多Agent系统</span>
+                <span class="tag tag-green">ADHD友好</span>
+                <span class="tag tag-orange">学习助手</span>
+                <span class="tag tag-red">ReAct推理</span>
+            </div>
+            <h1>学习智能体</h1>
+            <p class="subtitle">基于 LangGraph + LangChain 的多 Agent 智能学习规划系统</p>
+            <a href="https://github.com/codewithwu/academic-task-learning-agent" style="display: inline-block; margin-top: 16px; color: #10b981; text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/academic-task-learning-agent</a>
+        </header>
+
+        <div class="grid">
+            <div class="card card-blue">
+                <div class="card-icon">📌</div>
+                <div class="card-title">项目定位</div>
+                <ul>
+                    <li>为学生提供<span class="highlight-orange">个性化学习规划</span>、资料生成和学习指导</li>
+                    <li>特别关注 <span class="highlight-purple">ADHD 学生</span>和需要兼顾体育等事务的学习者</li>
+                    <li>通过 AI 协调多个专业 Agent 实现<span class="highlight-green">一站式学习辅助</span></li>
+                </ul>
+            </div>
+
+            <div class="card card-purple">
+                <div class="card-icon">💡</div>
+                <div class="card-title">核心价值</div>
+                <ul>
+                    <li><span class="highlight-blue">Planner Agent</span>：分析日历和任务，生成 ADHD 友好计划</li>
+                    <li><span class="highlight-purple">NoteWriter Agent</span>：根据学习风格生成结构化笔记</li>
+                    <li><span class="highlight-green">Advisor Agent</span>：针对学业情况提供定制建议</li>
+                    <li><span class="highlight-orange">Coordinator Agent</span>：统一协调调度多 Agent 并行工作</li>
+                </ul>
+            </div>
+
+            <div class="card card-green">
+                <div class="card-icon">⚙️</div>
+                <div class="card-title">技术栈</div>
+                <div class="tech-stack">
+                    <span class="tech-badge">LangGraph</span>
+                    <span class="tech-badge">LangChain</span>
+                    <span class="tech-badge">FastAPI</span>
+                    <span class="tech-badge">Ollama</span>
+                    <span class="tech-badge">OpenAI</span>
+                    <span class="tech-badge">NVIDIA</span>
+                </div>
+                <ul style="margin-top: 16px;">
+                    <li>Agent 编排：<span class="highlight">langgraph >= 1.1.10</span></li>
+                    <li>LLM 抽象：<span class="highlight-blue">langchain >= 1.2.17</span></li>
+                    <li>速率限制：<span class="highlight-green">langmem >= 0.0.30</span></li>
+                    <li>Web 框架：<span class="highlight-purple">fastapi >= 0.136.1</span></li>
+                </ul>
+            </div>
+
+            <div class="card card-orange">
+                <div class="card-icon">🌐</div>
+                <div class="card-title">多后端 LLM 支持</div>
+                <ul>
+                    <li><span class="highlight-blue">ollama</span>：本地部署，零成本</li>
+                    <li><span class="highlight-purple">nvidia</span>：NVIDIA NGC 云端算力</li>
+                    <li><span class="highlight-green">openai</span>：GPT-4/GPT-3.5</li>
+                    <li><span class="highlight-orange">deepseek</span>、zhipu、bailing、siliconflow 等</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="flow-title">LangGraph 工作流状态机</div>
+            <div class="flow-diagram">
+                <div class="flow-node flow-node-start">START</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-coordinator">Coordinator<br><small>任务协调</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-profile">Profile Analyzer<br><small>学生画像</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-agent">并行 Agent<br><small>Planner/NoteWriter/Advisor</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-execute">execute<br><small>结果聚合</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-start">END</div>
+            </div>
+            <div style="text-align: center; color: #888; font-size: 13px; margin-top: 12px;">
+                条件边逻辑：根据 <span class="highlight-orange">coordinator_analysis.required_agents</span> 动态决定启用哪些专业 Agent
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-red">
+                <div class="card-icon">🔧</div>
+                <div class="card-title">核心模块 — AcademicState</div>
+                <ul>
+                    <li>继承 <span class="highlight-blue">MessagesState</span>，统一状态容器</li>
+                    <li>使用 <span class="highlight-orange">dict_reducer</span> 合并嵌套字典</li>
+                    <li>支持 profile/calendar/tasks/results 字段</li>
+                    <li>实现字典<span class="highlight-purple">递归合并</span>，避免状态覆盖</li>
+                </ul>
+            </div>
+
+            <div class="card card-cyan">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">核心模块 — ReActAgent</div>
+                <ul>
+                    <li><strong>Thought</strong>：分析当前状态和上下文</li>
+                    <li><strong>Action</strong>：决定下一步工具/方法</li>
+                    <li><strong>Observation</strong>：记录动作结果</li>
+                    <li><strong>Plan</strong>：制定后续计划</li>
+                </ul>
+            </div>
+
+            <div class="card card-blue">
+                <div class="card-icon">📅</div>
+                <div class="card-title">Planner Agent 三阶段</div>
+                <ul>
+                    <li><span class="highlight-purple">calendar_analyzer</span>：分析可用时间块、冲突检测、精力模式</li>
+                    <li><span class="highlight-blue">task_analyzer</span>：优先级、时间估算、依赖关系</li>
+                    <li><span class="highlight-green">plan_generator</span>：生成综合学习计划</li>
+                    <li>内置 <span class="highlight-orange">Few-shot</span> 示例，ADHD 友好设计</li>
+                </ul>
+            </div>
+
+            <div class="card card-purple">
+                <div class="card-icon">📝</div>
+                <div class="card-title">NoteWriter Agent 两阶段</div>
+                <ul>
+                    <li><span class="highlight-blue">analyze_learning_style</span>：分析学习风格偏好</li>
+                    <li><span class="highlight-purple">generate_notes</span>：生成 Markdown 个性化笔记</li>
+                    <li>输出包含<span class="highlight-green">记忆强化技巧</span>嵌入</li>
+                    <li>适配学生学习风格偏好</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-orange">
+                <div class="card-icon">🎓</div>
+                <div class="card-title">Advisor Agent 两阶段</div>
+                <ul>
+                    <li><span class="highlight-blue">analyze_situation</span>：分析当前学业情况</li>
+                    <li><span class="highlight-purple">generate_guidance</span>：生成学习指导建议</li>
+                    <li>指导内容：立即可采取的行动步骤</li>
+                    <li>日程优化、精力管理、应急计划</li>
+                </ul>
+            </div>
+
+            <div class="card card-green">
+                <div class="card-icon">⚡</div>
+                <div class="card-title">AgentExecutor 并发引擎</div>
+                <ul>
+                    <li>使用 <span class="highlight-blue">asyncio.gather</span> 实现真并发</li>
+                    <li>多 Agent <span class="highlight-purple">并行执行</span></li>
+                    <li>使用 <span class="highlight-orange">return_exceptions=True</span> 捕获异常</li>
+                    <li>显著提升系统响应速度</li>
+                </ul>
+            </div>
+
+            <div class="card card-red">
+                <div class="card-icon">🏭</div>
+                <div class="card-title">LLMFactory 多后端工厂</div>
+                <ul>
+                    <li>支持 <span class="highlight-blue">9+ 种</span> LLM 提供商</li>
+                    <li>工厂模式 + <span class="highlight-purple">@lru_cache</span> 单例</li>
+                    <li><span class="highlight-green">InMemoryRateLimiter(0.1)</span> 全局限流</li>
+                    <li>防止 API 过载</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="flow-title">数据模型</div>
+            <div class="agent-cards">
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #60a5fa;">学生档案 profile.json</div>
+                    <div class="agent-card-desc">personal_info / academic_info / learning_preferences / productivity_tools</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #c084fc;">日历事件 calendar_events.json</div>
+                    <div class="agent-card-desc">events: id / summary / start / end / metadata</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #4ade80;">任务 task.json</div>
+                    <div class="agent-card-desc">tasks: id / title / due / status / priority / adhd_support</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-blue">
+                <div class="card-icon">🔌</div>
+                <div class="card-title">API 接口</div>
+                <ul>
+                    <li><span class="highlight">POST /api/agent/run</span>：核心 Agent 接口</li>
+                    <li><span class="highlight-blue">GET /</span>：前端页面（原生 HTML/CSS/JS）</li>
+                    <li><span class="highlight-purple">GET /health</span>：健康检查</li>
+                    <li><span class="highlight-green">GET /docs</span>：Swagger 文档</li>
+                </ul>
+            </div>
+
+            <div class="card card-purple">
+                <div class="card-icon">🎨</div>
+                <div class="card-title">设计模式</div>
+                <ul>
+                    <li><span class="highlight-blue">ReAct</span>：结构化推理模式</li>
+                    <li><span class="highlight-purple">Factory + Singleton</span>：LLM 客户端管理</li>
+                    <li><span class="highlight-green">dict_reducer</span>：递归字典合并</li>
+                    <li><span class="highlight-orange">asyncio.gather</span>：并发执行</li>
+                </ul>
+            </div>
+
+            <div class="card card-orange">
+                <div class="card-icon">✨</div>
+                <div class="card-title">项目特色</div>
+                <ul>
+                    <li>多 Agent 协作：<span class="highlight-blue">Coordinator 统一调度</span></li>
+                    <li>LangGraph 状态机：<span class="highlight-purple">条件分支</span></li>
+                    <li>ReAct 推理框架：<span class="highlight-green">结构化决策</span></li>
+                    <li>零框架前端：<span class="highlight-orange">原生 HTML/CSS/JS</span></li>
+                </ul>
+            </div>
+
+            <div class="card card-red">
+                <div class="card-icon">📊</div>
+                <div class="card-title">启动方式</div>
+                <ul>
+                    <li><span class="highlight">uv run uvicorn</span> src.main:app --reload</li>
+                    <li>开发模式：<span class="highlight-blue">--host 0.0.0.0 --port 8000</span></li>
+                    <li>测试：<span class="highlight-purple">uv run pytest -v</span></li>
+                    <li>代码检查：<span class="highlight-green">uv run ruff format .</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-value stat-blue">3</div>
+                <div class="stat-label">专业 Agent</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-purple">9+</div>
+                <div class="stat-label">LLM 提供商</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-green">0.1</div>
+                <div class="stat-label">req/s 全局限流</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-blue">Python 3.13+</div>
+                <div class="stat-label">运行时要求</div>
+            </div>
+        </div>
+
+        <footer>
+            学习智能体 (Academic Task Learning Agent) | 基于 LangGraph + LangChain<br>
+        </footer>
+    </div>
+</body>
+</html>
