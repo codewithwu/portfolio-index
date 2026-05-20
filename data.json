@@ -35,7 +35,7 @@
         "description": "基于LangGraph的多Agent智能系统，协调Planner、NoteWriter、Advisor三大 Agent，通过 ReAct 框架为学生提供个性化学习规划、学习资料生成和学术指导。"
     },
     {
-        "name": "SQL_Agent_LangGraph.html",
+        "name": "SQL_Agent_LangGraph",
         "path": "html/SQL_Agent_LangGraph.html",
         "github": "https://github.com/codewithwu/sql-agent-langgraph",
         "star": 1,
