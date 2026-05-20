@@ -11,3 +11,4 @@
 | HeartMula AI音乐智能创作平台 | 端到端 AI 音乐创作平台 — 基于 HeartMuLa 开源模型家族 | https://github.com/codewithwu/heartmula-web- |
 | AGV_Ops_Agent 智能运维助手 | 基于检索增强生成的 AGV 故障诊断问答系统 | https://github.com/codewithwu/agv_ops_agent |
 | 辅助学习智能体 | 基于LangGraph的多Agent智能系统，协调Planner、NoteWriter、Advisor三大Agent | https://github.com/codewithwu/academic-task-learning-agent |
+| SQL Agent LangGraph | 基于 LangGraph 构建的智能 SQL 代理，支持 SQL 生成、语法检查、人工审核和结果汇总 | https://github.com/codewithwu/sql-agent-langgraph |

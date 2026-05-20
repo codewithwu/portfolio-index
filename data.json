@@ -33,5 +33,12 @@
         "github": "https://github.com/codewithwu/academic-task-learning-agent",
         "star": 1,
         "description": "基于LangGraph的多Agent智能系统，协调Planner、NoteWriter、Advisor三大 Agent，通过 ReAct 框架为学生提供个性化学习规划、学习资料生成和学术指导。"
+    },
+    {
+        "name": "SQL_Agent_LangGraph.html",
+        "path": "html/SQL_Agent_LangGraph.html",
+        "github": "https://github.com/codewithwu/sql-agent-langgraph",
+        "star": 1,
+        "description": "基于 LangGraph 构建的智能 SQL 代理，支持 SQL 生成、语法检查、人工审核和结果汇总。"
     }
 ]
