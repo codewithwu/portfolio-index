@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自适应学习助手 | 知识卡片</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: #0a0a0f;
+            color: #e8e8f0;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(255, 107, 107, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(78, 205, 196, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(255, 230, 109, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .tag-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .tag-red { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .tag-teal { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border: 1px solid rgba(78, 205, 196, 0.3); }
+        .tag-yellow { background: rgba(255, 230, 109, 0.2); color: #ffe66d; border: 1px solid rgba(255, 230, 109, 0.3); }
+        .tag-purple { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .tag-blue { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-green { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        h1 {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #ff6b6b 50%, #4ecdc4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 16px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: linear-gradient(135deg, rgba(30, 30, 45, 0.9) 0%, rgba(20, 20, 35, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: 20px 20px 0 0;
+        }
+        .card-red::before { background: linear-gradient(90deg, #ff6b6b, #ff8e8e); }
+        .card-teal::before { background: linear-gradient(90deg, #4ecdc4, #7ee8e0); }
+        .card-yellow::before { background: linear-gradient(90deg, #ffe66d, #fff2a8); }
+        .card-purple::before { background: linear-gradient(90deg, #a855f7, #c084fc); }
+        .card-blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .card-green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .card-orange::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 18px;
+        }
+        .card-red .card-icon { background: rgba(255, 107, 107, 0.15); }
+        .card-teal .card-icon { background: rgba(78, 205, 196, 0.15); }
+        .card-yellow .card-icon { background: rgba(255, 230, 109, 0.15); }
+        .card-purple .card-icon { background: rgba(168, 85, 247, 0.15); }
+        .card-blue .card-icon { background: rgba(59, 130, 246, 0.15); }
+        .card-green .card-icon { background: rgba(34, 197, 94, 0.15); }
+        .card-orange .card-icon { background: rgba(245, 158, 11, 0.15); }
+        .card-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+        .card ul {
+            list-style: none;
+        }
+        .card li {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #c5c5d5;
+        }
+        .card li:last-child {
+            border-bottom: none;
+        }
+        .card li::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-top: 8px;
+            flex-shrink: 0;
+        }
+        .card-red li::before { background: #ff6b6b; }
+        .card-teal li::before { background: #4ecdc4; }
+        .card-yellow li::before { background: #ffe66d; }
+        .card-purple li::before { background: #a855f7; }
+        .card-blue li::before { background: #3b82f6; }
+        .card-green li::before { background: #10b981; }
+        .card-orange li::before { background: #f59e0b; }
+        .highlight {
+            background: linear-gradient(90deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.1));
+            color: #ff6b6b;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-teal {
+            background: linear-gradient(90deg, rgba(78, 205, 196, 0.2), rgba(78, 205, 196, 0.1));
+            color: #4ecdc4;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-yellow {
+            background: linear-gradient(90deg, rgba(255, 230, 109, 0.2), rgba(255, 230, 109, 0.1));
+            color: #ffe66d;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-purple {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.2), rgba(168, 85, 247, 0.1));
+            color: #c084fc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-blue {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.1));
+            color: #60a5fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-green {
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+            color: #4ade80;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .highlight-orange {
+            background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.1));
+            color: #fbbf24;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .flow-section {
+            background: linear-gradient(135deg, rgba(30, 30, 45, 0.9) 0%, rgba(20, 20, 35, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            padding: 28px;
+            margin-bottom: 24px;
+        }
+        .flow-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 20px 0;
+        }
+        .flow-node {
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .flow-node-start { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .flow-node-generate { background: rgba(78, 205, 196, 0.2); color: #4ecdc4; border: 1px solid rgba(78, 205, 196, 0.3); }
+        .flow-node-context { background: rgba(255, 230, 109, 0.2); color: #ffe66d; border: 1px solid rgba(255, 230, 109, 0.3); }
+        .flow-node-question { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+        .flow-node-answer { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .flow-node-verify { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .flow-node-teach { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .flow-node-end { background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 1px solid rgba(255, 107, 107, 0.3); }
+        .flow-arrow {
+            color: #555;
+            font-size: 18px;
+        }
+        .agent-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .agent-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+        .agent-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .agent-card-desc {
+            font-size: 12px;
+            color: #888;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+        .stat-red { color: #ff6b6b; }
+        .stat-teal { color: #4ecdc4; }
+        .stat-yellow { color: #ffe66d; }
+        .stat-purple { color: #c084fc; }
+        .stat-blue { color: #60a5fa; }
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            color: #555;
+            font-size: 13px;
+        }
+        @media (max-width: 768px) {
+            h1 { font-size: 28px; }
+            .grid { grid-template-columns: 1fr; }
+            .container { padding: 20px 16px; }
+            .flow-diagram { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+            .stats-row { gap: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="tag-row">
+                <span class="tag tag-red">LangGraph</span>
+                <span class="tag tag-teal">自适应学习</span>
+                <span class="tag tag-yellow">费曼学习法</span>
+                <span class="tag tag-purple">向量检索</span>
+                <span class="tag tag-blue">FastAPI</span>
+                <span class="tag tag-green">间隔检测</span>
+            </div>
+            <h1>自适应学习助手</h1>
+            <p class="subtitle">基于 LangGraph 的智能自适应学习系统 | Adaptive Learning Agent</p>
+            <a href="https://github.com/codewithwu/adaptive-learning-agent" style="display: inline-block; margin-top: 16px; color: var(--accent-emerald); text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/adaptive-learning-agent</a>
+        </header>
+
+        <div class="grid">
+            <div class="card card-red">
+                <div class="card-icon">📌</div>
+                <div class="card-title">项目定位</div>
+                <ul>
+                    <li>AI 驱动的自适应学习辅导系统</li>
+                    <li>核心理念：<span class="highlight-yellow">费曼学习法</span> + <span class="highlight-teal">间隔检测效应</span></li>
+                    <li>通过出题-验证-教学的<span class="highlight-green">闭环循环</span>帮助掌握知识</li>
+                    <li>LangGraph 状态机编排多步骤 AI 工作流</li>
+                </ul>
+            </div>
+
+            <div class="card card-teal">
+                <div class="card-icon">✨</div>
+                <div class="card-title">核心亮点</div>
+                <ul>
+                    <li><span class="highlight">自适应路径</span>：3 个递进检查点（基础 → 应用 → 掌握）</li>
+                    <li><span class="highlight-teal">语义分块</span>：向量检索实现笔记精准出题</li>
+                    <li><span class="highlight-yellow">智能补充</span>：Tavily 搜索补充学习资料</li>
+                    <li><span class="highlight-green">量化评估</span>：0-100% 评分，低于 70% 自动教学</li>
+                </ul>
+            </div>
+
+            <div class="card card-yellow">
+                <div class="card-icon">🛠️</div>
+                <div class="card-title">技术栈</div>
+                <ul>
+                    <li><span class="highlight">Agent 框架</span>：LangGraph 1.1.10+ 状态机</li>
+                    <li><span class="highlight-teal">LLM 编排</span>：LangChain 1.2.17+</li>
+                    <li><span class="highlight-purple">后端服务</span>：FastAPI + Uvicorn</li>
+                    <li><span class="highlight-blue">向量嵌入</span>：Ollama Embeddings 本地</li>
+                    <li><span class="highlight-green">网络搜索</span>：Tavily Search API</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="flow-title">系统架构图</div>
+            <div class="flow-diagram">
+                <div class="flow-node flow-node-start">前端界面<br><small>原生 HTML/CSS/JS</small></div>
+                <span class="flow-arrow">↓</span>
+                <div class="flow-node flow-node-generate">FastAPI 后端<br><small>src/</small></div>
+                <span class="flow-arrow">↓</span>
+                <div class="flow-node flow-node-context">LangGraph 状态机<br><small>AgentModule</small></div>
+                <span class="flow-arrow">↓</span>
+                <div class="flow-node flow-node-question">LangChain 工具层<br><small>langchain_agent/</small></div>
+                <span class="flow-arrow">↓</span>
+                <div class="flow-node flow-node-answer">外部服务<br><small>LLM + Tavily</small></div>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="flow-title">LangGraph 学习状态机</div>
+            <div class="flow-diagram">
+                <div class="flow-node flow-node-start">START</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-generate">generate_checkpoints<br><small>生成检查点</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-context">chunk_context<br><small>语义分块</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-question">context_validation<br><small>验证覆盖</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-answer">generate_question<br><small>生成题目</small></div>
+            </div>
+            <div class="flow-diagram" style="margin-top: 8px;">
+                <div class="flow-node flow-node-verify">user_answer<br><small>用户作答</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-teach">verify_answer<br><small>验证答案</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-generate">teach_concept<br><small>费曼教学</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-end">next_checkpoint<br><small>下一检查点</small></div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-node flow-node-start">END</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-teal">
+                <div class="card-icon">📊</div>
+                <div class="card-title">LearningState 状态定义</div>
+                <ul>
+                    <li><span class="highlight">topic</span>：学习主题</li>
+                    <li><span class="highlight-teal">goals</span>：学习目标列表</li>
+                    <li><span class="highlight-yellow">context</span>：原始笔记内容</li>
+                    <li><span class="highlight-green">context_chunks</span>：Annotated[list, operator.add] 累加语义</li>
+                </ul>
+            </div>
+
+            <div class="card card-purple">
+                <div class="card-icon">📦</div>
+                <div class="card-title">9 个 Pydantic 模型</div>
+                <ul>
+                    <li><span class="highlight">LearningCheckpoint</span>：单个学习检查点</li>
+                    <li><span class="highlight-teal">LearningVerification</span>：答案验证结果</li>
+                    <li><span class="highlight-yellow">FeynmanTeaching</span>：费曼教学内容</li>
+                    <li><span class="highlight-purple">QuestionOutput</span>：生成的题目</li>
+                </ul>
+            </div>
+
+            <div class="card card-blue">
+                <div class="card-icon">🔧</div>
+                <div class="card-title">10 个图节点</div>
+                <ul>
+                    <li><span class="highlight">generate_checkpoints</span>：生成递进检查点</li>
+                    <li><span class="highlight-teal">chunk_context</span>：OllamaEncoder + StatisticalChunker</li>
+                    <li><span class="highlight-yellow">context_validation</span>：余弦相似度 + Top-K=3</li>
+                    <li><span class="highlight-purple">verify_answer</span>：基础模型失败自动降级</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-green">
+                <div class="card-icon">🔀</div>
+                <div class="card-title">条件路由 (routes.py)</div>
+                <ul>
+                    <li><span class="highlight">route_context</span>：chunk_context | generate_query</li>
+                    <li><span class="highlight-teal">route_search</span>：search_web | generate_question</li>
+                    <li><span class="highlight-green">route_verification</span>：next_checkpoint | teach_concept | END</li>
+                    <li><span class="highlight-purple">route_teaching</span>：next_checkpoint | END</li>
+                </ul>
+            </div>
+
+            <div class="card card-orange">
+                <div class="card-icon">🧠</div>
+                <div class="card-title">向量检索与上下文</div>
+                <ul>
+                    <li><span class="highlight">ContextStore</span>：基于 InMemoryStore 封装</li>
+                    <li><span class="highlight-teal">语义分块</span>：128-512 tokens 粒度</li>
+                    <li><span class="highlight-yellow">检索策略</span>：余弦相似度 + Top-K=3</li>
+                    <li><span class="highlight-green">编码器</span>：OllamaEncoder 本地嵌入</li>
+                </ul>
+            </div>
+
+            <div class="card card-red">
+                <div class="card-icon">🏭</div>
+                <div class="card-title">双模型 LLM 工厂</div>
+                <ul>
+                    <li><span class="highlight">basic_model</span>：LongCat（美团）日常任务</li>
+                    <li><span class="highlight-teal">advanced_model</span>：百灵（Ling）降级方案</li>
+                    <li><span class="highlight-yellow">8 个提供商</span>：ollama/nvidia/zhipu/bailing...</li>
+                    <li><span class="highlight-green">单例模式</span>：@lru_cache 缓存实例</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card card-yellow">
+                <div class="card-icon">🛡️</div>
+                <div class="card-title">自定义中间件</div>
+                <ul>
+                    <li><span class="highlight">dynamic_model_selection</span>：消息 >10 条切换高级模型</li>
+                    <li><span class="highlight-teal">comprehensive_tool_filter</span>：多维度过滤工具</li>
+                    <li><span class="highlight-yellow">handle_tool_errors</span>：错误捕获与友好提示</li>
+                    <li><span class="highlight-purple">user_role_prompt</span>：角色动态调整提示词</li>
+                </ul>
+            </div>
+
+            <div class="card card-teal">
+                <div class="card-icon">📡</div>
+                <div class="card-title">API 端点</div>
+                <ul>
+                    <li><span class="highlight">POST /api/sessions</span>：创建学习会话</li>
+                    <li><span class="highlight-teal">POST /resume</span>：恢复中断会话</li>
+                    <li><span class="highlight-yellow">GET /state</span>：获取状态快照</li>
+                    <li><span class="highlight-green">Command(resume=...)</span>：中断恢复机制</li>
+                </ul>
+            </div>
+
+            <div class="card card-purple">
+                <div class="card-icon">📝</div>
+                <div class="card-title">提示词工程（6 个模板）</div>
+                <ul>
+                    <li><span class="highlight">检查点生成</span>：3 个递进检查点</li>
+                    <li><span class="highlight-teal">上下文验证</span>：严格 YES/NO 输出</li>
+                    <li><span class="highlight-yellow">答案验证</span>：多维度评估</li>
+                    <li><span class="highlight-purple">费曼教学</span>：无术语简化 + 类比</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="flow-section">
+            <div class="flow-title">设计亮点</div>
+            <div class="agent-cards">
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #ff6b6b;">LangGraph 状态机</div>
+                    <div class="agent-card-desc">有向图建模，支持中断/恢复</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #4ecdc4;">向量检索增强</div>
+                    <div class="agent-card-desc">语义分块 + 余弦相似度精准出题</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #ffe66d;">自适应分支</div>
+                    <div class="agent-card-desc">动态选择执行路径</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #c084fc;">双模型容错</div>
+                    <div class="agent-card-desc">基础 + 高级降级方案</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #4ade80;">结构化输出</div>
+                    <div class="agent-card-desc">with_structured_output() 强制输出</div>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-card-title" style="color: #fbbf24;">可复用工具层</div>
+                    <div class="agent-card-desc">langchain_agent 独立工具包</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-value stat-red">10</div>
+                <div class="stat-label">图节点</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-teal">6</div>
+                <div class="stat-label">提示词模板</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-yellow">9</div>
+                <div class="stat-label">Pydantic 模型</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-purple">8</div>
+                <div class="stat-label">LLM 提供商</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value stat-blue">70%</div>
+                <div class="stat-label">理解度阈值</div>
+            </div>
+        </div>
+
+        <footer>
+            自适应学习助手 (Adaptive Learning Agent) | 基于 LangGraph + LangChain<br>
+            费曼学习法 + 间隔检测效应 | 认知科学驱动的 AI 学习系统
+        </footer>
+    </div>
+</body>
+</html>

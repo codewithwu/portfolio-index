@@ -40,5 +40,12 @@
         "github": "https://github.com/codewithwu/sql-agent-langgraph",
         "star": 1,
         "description": "基于 LangGraph 构建的智能 SQL 代理，支持 SQL 生成、语法检查、人工审核和结果汇总。"
+    },
+    {
+        "name": "自适应学习助手",
+        "path": "html/自适应学习助手.html",
+        "github": "https://github.com/codewithwu/adaptive-learning-agent",
+        "star": 1,
+        "description": "基于 LangGraph 的自适应学习 Agent，通过对话式交互帮助用户掌握知识。Agent 会根据用户提供的主题和学习目标自动生成学习检查点，逐步验证理解程度，并在需要时提供费曼式教学。"
     }
 ]
