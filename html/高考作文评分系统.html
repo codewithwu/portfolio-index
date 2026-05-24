@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高考作文评分系统 | 知识卡片</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #020208;
+            --bg-deep: #080818;
+            --bg-surface: #0c0c24;
+            --bg-elevated: #12123a;
+            --bg-card: rgba(15, 15, 50, 0.85);
+
+            --cyan-glow: #00f5ff;
+            --cyan-dim: #00a8b3;
+            --magenta-glow: #ff00ff;
+            --magenta-dim: #b300b3;
+            --violet-glow: #8b5cf6;
+            --amber-glow: #fbbf24;
+            --emerald-glow: #10b981;
+            --rose-glow: #f43f5e;
+
+            --text-bright: #f0f0ff;
+            --text-primary: #c8c8e8;
+            --text-muted: #6b6b9a;
+            --text-dim: #3a3a6a;
+
+            --border-glow: rgba(0, 245, 255, 0.15);
+            --border-subtle: rgba(100, 100, 200, 0.1);
+
+            --glow-cyan: 0 0 30px rgba(0, 245, 255, 0.3), 0 0 60px rgba(0, 245, 255, 0.1);
+            --glow-magenta: 0 0 30px rgba(255, 0, 255, 0.3), 0 0 60px rgba(255, 0, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-void);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .cosmos {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .cosmos::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(251, 191, 36, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 245, 255, 0.04) 0%, transparent 70%);
+            animation: cosmicDrift 30s ease-in-out infinite;
+        }
+
+        @keyframes cosmicDrift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-2%, 1%) rotate(1deg); }
+            66% { transform: translate(1%, -2%) rotate(-1deg); }
+        }
+
+        .grid-plane {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%);
+            z-index: 1;
+            animation: gridPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--violet-glow);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--violet-glow);
+            animation: particleFloat linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-10vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-duration: 12s; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 25%; animation-duration: 15s; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 40%; animation-duration: 10s; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 55%; animation-duration: 18s; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 70%; animation-duration: 13s; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 85%; animation-duration: 16s; animation-delay: 5s; }
+        .particle:nth-child(7) { left: 15%; animation-duration: 14s; animation-delay: 6s; background: var(--amber-glow); box-shadow: 0 0 6px var(--amber-glow); }
+        .particle:nth-child(8) { left: 60%; animation-duration: 11s; animation-delay: 7s; background: var(--amber-glow); box-shadow: 0 0 6px var(--amber-glow); }
+
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--violet-glow), transparent);
+            z-index: 3;
+            animation: scanMove 8s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes scanMove {
+            0% { top: -2px; }
+            100% { top: 100%; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+            animation: headerReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes headerReveal {
+            from {
+                opacity: 0;
+                transform: translateY(-40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--violet-glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+        }
+
+        .header-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--violet-glow);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--violet-glow);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--violet-glow) 0%, var(--amber-glow) 50%, var(--emerald-glow) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.3));
+        }
+
+        .header .subtitle {
+            font-size: 1.05rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 28px;
+            line-height: 1.8;
+            letter-spacing: 0.5px;
+        }
+
+        .tags {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 6px 18px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(139, 92, 246, 0.06);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: var(--violet-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            background: rgba(139, 92, 246, 0.15);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+
+        .card {
+            position: relative;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--violet-glow), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(139, 92, 246, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.2);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(5) { animation-delay: 0.3s; }
+        .card:nth-child(6) { animation-delay: 0.35s; }
+        .card:nth-child(7) { animation-delay: 0.4s; }
+        .card:nth-child(8) { animation-delay: 0.45s; }
+        .card:nth-child(9) { animation-delay: 0.5s; }
+        .card:nth-child(10) { animation-delay: 0.55s; }
+
+        @keyframes cardReveal {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            padding: 1px;
+            background: linear-gradient(135deg, var(--violet-glow), var(--amber-glow));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .card-content {
+            list-style: none;
+        }
+
+        .card-content li {
+            position: relative;
+            padding: 12px 0 12px 28px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            border-left: 1px solid var(--border-glow);
+            margin-left: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .card-content li:hover {
+            border-left-color: var(--violet-glow);
+            background: rgba(139, 92, 246, 0.02);
+        }
+
+        .card-content li::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 18px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--violet-glow);
+            box-shadow: 0 0 8px var(--violet-glow);
+            transition: all 0.2s ease;
+        }
+
+        .card-content li:hover::before {
+            transform: scale(1.3);
+            box-shadow: 0 0 12px var(--violet-glow);
+        }
+
+        .card-content li strong {
+            color: var(--violet-glow);
+            font-weight: 500;
+        }
+
+        .workflow-diagram {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--amber-glow);
+            position: relative;
+        }
+
+        .workflow-diagram::before {
+            content: 'WORKFLOW';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            color: var(--emerald-glow);
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'PYTHON';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .weight-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .weight-item {
+            padding: 12px 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.15);
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .weight-item:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .weight-item .value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--amber-glow);
+        }
+
+        .weight-item .label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .api-table {
+            margin-top: 16px;
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .api-row {
+            display: grid;
+            grid-template-columns: 80px 1fr 120px;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.85rem;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .api-row:last-child {
+            border-bottom: none;
+        }
+
+        .api-row:hover {
+            background: rgba(139, 92, 246, 0.03);
+        }
+
+        .api-method {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .api-method.get {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--emerald-glow);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .api-method.post {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--amber-glow);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .api-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .api-desc {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .provider-item {
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(139, 92, 246, 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .provider-item:hover {
+            border-color: rgba(139, 92, 246, 0.2);
+            background: rgba(139, 92, 246, 0.05);
+        }
+
+        .provider-item strong {
+            color: var(--violet-glow);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-subtle);
+            animation: fadeIn 1s ease 1s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .footer-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--violet-glow), transparent);
+        }
+
+        .footer p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .footer .source {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .footer .error-notice {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--rose-glow);
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 40px 16px;
+            }
+
+            .header {
+                margin-bottom: 50px;
+            }
+
+            .weight-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .provider-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .api-row {
+                grid-template-columns: 70px 1fr;
+            }
+
+            .api-desc {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .api-row {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+
+            .api-method {
+                justify-self: start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cosmos"></div>
+    <div class="grid-plane"></div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    <div class="scanline"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-badge">
+                <span class="dot"></span>
+                <span>Knowledge Card v1.0</span>
+            </div>
+            <h1>高考作文评分系统</h1>
+            <p class="subtitle">基于 LangGraph 构建的高考作文智能评分系统，采用多 Agent 协同架构，对作文进行四维度独立评估，支持流式输出与短路机制</p>
+            <a href="https://github.com/codewithwu/langgraph-essay-grading" style="display: inline-block; margin-top: 16px; color: var(--accent-emerald); text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/langgraph-essay-grading</a>
+            <div class="tags">
+                <span class="tag">LangGraph</span>
+                <span class="tag">Multi-Agent</span>
+                <span class="tag">FastAPI</span>
+                <span class="tag">SSE</span>
+                <span class="tag">AI 教育</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Card 1: Project Overview -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <h2>项目概述</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>核心功能：</strong>输入作文题目与正文，返回四维度评分及综合得分</li>
+                    <li><strong>评分维度：</strong>审题立意、论据分析、结构评估、语言文采</li>
+                    <li><strong>技术架构：</strong>LangGraph 状态图工作流 + 条件路由</li>
+                    <li><strong>应用场景：</strong>教师辅助批改、学生自评练习、AI 教育产品集成</li>
+                </ul>
+            </div>
+
+            <!-- Card 2: Core Architecture -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <h2>核心架构</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>状态模型：</strong>EssayState (TypedDict) + ScoreDetail (Pydantic)</li>
+                    <li><strong>工作流引擎：</strong>LangGraph StateGraph</li>
+                    <li><strong>短路机制：</strong>relevance score ≤ 0.5 时跳过后续评估</li>
+                    <li><strong>并行评估：</strong>fan_out 触发三 Agent 并行执行</li>
+                </ul>
+                <div class="workflow-diagram">START ──► check_relevance ──► (score>0.5?)
+                                    │          Y → fan_out
+                                    │          N → calculate_final_score
+                                    │                    ▲
+                      └── fan_out ──► evidence ────────────┤
+                              ├──► structure ─────────────┤
+                              └──► expression ─────────────┘
+                                            │
+                                   calculate_final_score
+                                            │
+                                           END</div>
+            </div>
+
+            <!-- Card 3: Four Agents -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🤖</div>
+                    <h2>四维度独立评分 Agent</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>check_relevance：</strong>审题立意 — 考察是否准确理解题目</li>
+                    <li><strong>check_evidence：</strong>论据分析 — 考察材料是否充实</li>
+                    <li><strong>check_structure：</strong>结构评估 — 考察行文逻辑衔接</li>
+                    <li><strong>check_expression：</strong>语言文采 — 考察用词修辞句式</li>
+                </ul>
+                <div class="code-block">structured_llm = llm.with_structured_output(ScoreDetail)
+
+def check_relevance(state: EssayState) -> dict:
+    messages = [
+        SystemMessage(content=build_json_prompt(ScoreDetail) + SYSTEM_PROMPT),
+        HumanMessage(content=f"题目：{state['topic']}\n作文：{state['essay']}"),
+    ]
+    result = structured_llm.invoke(messages)
+    return {"relevance": result}</div>
+            </div>
+
+            <!-- Card 4: Short-Circuit -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚡</div>
+                    <h2>短路机制（Short-Circuit）</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>触发条件：</strong>relevance.score ≤ 0.5（严重偏题）</li>
+                    <li><strong>节省开销：</strong>跳过 75% 的 LLM API 调用</li>
+                    <li><strong>防止虚高：</strong>避免跑题作文因后续得分而虚高</li>
+                    <li><strong>实现方式：</strong>add_conditional_edges + 自定义路由函数</li>
+                </ul>
+                <div class="code-block">def route_relevance(state: EssayState) -> str:
+    if state["relevance"].score > RELEVANCE_THRESHOLD:
+        return "fan_out"
+    return "calculate_final_score"</div>
+            </div>
+
+            <!-- Card 5: Fan-Out Parallel -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔀</div>
+                    <h2>Fan-Out 并行评估</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>并行节点：</strong>check_evidence / check_structure / check_expression</li>
+                    <li><strong>汇聚点：</strong>统一汇合至 calculate_final_score</li>
+                    <li><strong>实现方式：</strong>add_edge 从同一节点指向多个节点</li>
+                    <li><strong>优势：</strong>三个维度同时评估，提升效率</li>
+                </ul>
+                <div class="code-block">workflow.add_edge("fan_out", "check_evidence")
+workflow.add_edge("fan_out", "check_structure")
+workflow.add_edge("fan_out", "check_expression")</div>
+            </div>
+
+            <!-- Card 6: Weight Configuration -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📊</div>
+                    <h2>维度权重配置</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>审题立意：</strong>30% — 最重要维度</li>
+                    <li><strong>语言文采：</strong>30% — 与立意并列最重要</li>
+                    <li><strong>论据分析：</strong>20% — 材料充实度</li>
+                    <li><strong>结构评估：</strong>20% — 逻辑与衔接</li>
+                </ul>
+                <div class="weight-grid">
+                    <div class="weight-item">
+                        <div class="value">30%</div>
+                        <div class="label">审题立意</div>
+                    </div>
+                    <div class="weight-item">
+                        <div class="value">20%</div>
+                        <div class="label">论据分析</div>
+                    </div>
+                    <div class="weight-item">
+                        <div class="value">20%</div>
+                        <div class="label">结构评估</div>
+                    </div>
+                    <div class="weight-item">
+                        <div class="value">30%</div>
+                        <div class="label">语言文采</div>
+                    </div>
+                </div>
+                <div class="code-block" style="margin-top: 16px;">final = relevance×0.3 + evidence×0.2 + structure×0.2 + expression×0.3</div>
+            </div>
+
+            <!-- Card 7: SSE Streaming -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📡</div>
+                    <h2>流式 SSE 输出</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>实时推送：</strong>逐节点推送评分结果</li>
+                    <li><strong>前端渲染：</strong>SSE 事件实时更新 DOM</li>
+                    <li><strong>无需等待：</strong>节点完成立即显示评分卡片</li>
+                    <li><strong>骨架屏：</strong>加载中动态文案提示</li>
+                </ul>
+                <div class="workflow-diagram">event: check_relevance
+data: {"node": "check_relevance", "update": {"relevance": {"score": 0.90, "reason": "..."}}}
+
+event: check_evidence
+data: {"node": "check_evidence", "update": {"evidence": {"score": 0.85, "reason": "..."}}}</div>
+            </div>
+
+            <!-- Card 8: API Design -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🌐</div>
+                    <h2>API 设计</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>同步评分：</strong>POST /api/essays/grade — 等待完整结果</li>
+                    <li><strong>流式评分：</strong>POST /api/essays/grade/stream — SSE</li>
+                    <li><strong>健康检查：</strong>GET /api/essays/health</li>
+                    <li><strong>前端页面：</strong>GET / — index.html</li>
+                </ul>
+                <div class="api-table">
+                    <div class="api-row">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/</span>
+                        <span class="api-desc">前端页面</span>
+                    </div>
+                    <div class="api-row">
+                        <span class="api-method post">POST</span>
+                        <span class="api-path">/api/essays/grade</span>
+                        <span class="api-desc">同步评分</span>
+                    </div>
+                    <div class="api-row">
+                        <span class="api-method post">POST</span>
+                        <span class="api-path">/api/essays/grade/stream</span>
+                        <span class="api-desc">流式评分</span>
+                    </div>
+                    <div class="api-row">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/api/essays/health</span>
+                        <span class="api-desc">健康检查</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 9: LLM Factory -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🏭</div>
+                    <h2>LLM 多提供商支持</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>支持数量：</strong>8 种 LLM 提供商</li>
+                    <li><strong>限流机制：</strong>InMemoryRateLimiter（0.1 req/s，burst=10）</li>
+                    <li><strong>单例模式：</strong>@lru_cache 全局唯一实例</li>
+                </ul>
+                <div class="provider-grid">
+                    <div class="provider-item"><strong>Ollama</strong> — 本地模型</div>
+                    <div class="provider-item"><strong>NVIDIA</strong> — Llama-3.3-70B</div>
+                    <div class="provider-item"><strong>智谱 GLM-4</strong> — glm-4-flash</div>
+                    <div class="provider-item"><strong>百灵 Ling-1T</strong> — Ling-1T</div>
+                    <div class="provider-item"><strong>硅基流动</strong> — OpenAI 兼容</div>
+                    <div class="provider-item"><strong>魔塔社区</strong> — ModelScope</div>
+                    <div class="provider-item"><strong>美团 LongCat</strong> — 长文本模型</div>
+                    <div class="provider-item"><strong>DeepSeek</strong> — deepseek-chat</div>
+                </div>
+            </div>
+
+            <!-- Card 10: Key Patterns -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📐</div>
+                    <h2>关键设计模式</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>TypedDict 状态：</strong>部分状态更新，LangGraph 自动合并</li>
+                    <li><strong>Structured Output：</strong>llm.with_structured_output(PydanticModel)</li>
+                    <li><strong>条件路由：</strong>add_conditional_edges 实现动态流程</li>
+                    <li><strong>扇出-扇入：</strong>fan_out 单点触发多节点并行</li>
+                    <li><strong>异步桥接：</strong>threading.Thread + queue.Queue 桥接同步流</li>
+                    <li><strong>单例+工厂：</strong>@lru_cache + LLMFactory</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-line"></div>
+                <p>基于 LangGraph 的高考作文智能评分系统知识卡片</p>
+                <span class="error-notice">⚠ 版本号标记 [!!] 表示需要验证</span>
+                <p class="source">SOURCE: w.md PROJECT DOCUMENTATION</p>
+                <div class="footer-line"></div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', x + '%');
+                card.style.setProperty('--mouse-y', y + '%');
+            });
+        });
+    </script>
+</body>
+</html>

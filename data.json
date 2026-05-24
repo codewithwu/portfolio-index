@@ -54,5 +54,12 @@
         "github": "https://github.com/codewithwu/langgraph-customer-support",
         "star": 1,
         "description": "基于 LangGraph 的智能客服分流 Agent，支持问题分类、情感分析和自动路由，负面情绪自动转人工处理。"
+    },
+     {
+        "name": "高考作文评分系统",
+        "path": "html/高考作文评分系统.html",
+        "github": "https://github.com/codewithwu/langgraph-essay-grading",
+        "star": 1,
+        "description": "基于 LangGraph 的高考作文自动评分系统，支持审题立意、论据分析、结构评估、语言文采四维度评分，带评分理由和条件短路机制。"
     }
 ]
