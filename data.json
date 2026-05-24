@@ -47,5 +47,12 @@
         "github": "https://github.com/codewithwu/adaptive-learning-agent",
         "star": 1,
         "description": "基于 LangGraph 的自适应学习 Agent，通过对话式交互帮助用户掌握知识。Agent 会根据用户提供的主题和学习目标自动生成学习检查点，逐步验证理解程度，并在需要时提供费曼式教学。"
+    },
+    {
+        "name": "LangGraph智能客服分流Agent",
+        "path": "html/LangGraph智能客服分流Agent.html",
+        "github": "https://github.com/codewithwu/langgraph-customer-support",
+        "star": 1,
+        "description": "基于 LangGraph 的智能客服分流 Agent，支持问题分类、情感分析和自动路由，负面情绪自动转人工处理。"
     }
 ]

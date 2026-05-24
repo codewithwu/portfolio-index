@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangGraph 智能客服分流 Agent | 知识卡片</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-void: #020208;
+            --bg-deep: #080818;
+            --bg-surface: #0c0c24;
+            --bg-elevated: #12123a;
+            --bg-card: rgba(15, 15, 50, 0.85);
+
+            --cyan-glow: #00f5ff;
+            --cyan-dim: #00a8b3;
+            --magenta-glow: #ff00ff;
+            --magenta-dim: #b300b3;
+            --violet-glow: #8b5cf6;
+            --amber-glow: #fbbf24;
+            --emerald-glow: #10b981;
+            --rose-glow: #f43f5e;
+
+            --text-bright: #f0f0ff;
+            --text-primary: #c8c8e8;
+            --text-muted: #6b6b9a;
+            --text-dim: #3a3a6a;
+
+            --border-glow: rgba(0, 245, 255, 0.15);
+            --border-subtle: rgba(100, 100, 200, 0.1);
+
+            --glow-cyan: 0 0 30px rgba(0, 245, 255, 0.3), 0 0 60px rgba(0, 245, 255, 0.1);
+            --glow-magenta: 0 0 30px rgba(255, 0, 255, 0.3), 0 0 60px rgba(255, 0, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-void);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Deep space background */
+        .cosmos {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .cosmos::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(0, 245, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255, 0, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 70%);
+            animation: cosmicDrift 30s ease-in-out infinite;
+        }
+
+        @keyframes cosmicDrift {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(-2%, 1%) rotate(1deg); }
+            66% { transform: translate(1%, -2%) rotate(-1deg); }
+        }
+
+        /* Animated grid */
+        .grid-plane {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(var(--border-subtle) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px);
+            background-size: 60px 60px;
+            mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 30%, transparent 80%);
+            z-index: 1;
+            animation: gridPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--cyan-glow);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--cyan-glow);
+            animation: particleFloat linear infinite;
+        }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) translateX(0);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% {
+                transform: translateY(-10vh) translateX(100px);
+                opacity: 0;
+            }
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-duration: 12s; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 25%; animation-duration: 15s; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 40%; animation-duration: 10s; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 55%; animation-duration: 18s; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 70%; animation-duration: 13s; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 85%; animation-duration: 16s; animation-delay: 5s; }
+        .particle:nth-child(7) { left: 15%; animation-duration: 14s; animation-delay: 6s; background: var(--magenta-glow); box-shadow: 0 0 6px var(--magenta-glow); }
+        .particle:nth-child(8) { left: 60%; animation-duration: 11s; animation-delay: 7s; background: var(--magenta-glow); box-shadow: 0 0 6px var(--magenta-glow); }
+
+        /* Scanline effect */
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+            z-index: 3;
+            animation: scanMove 8s linear infinite;
+            opacity: 0.3;
+        }
+
+        @keyframes scanMove {
+            0% { top: -2px; }
+            100% { top: 100%; }
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 24px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+            animation: headerReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes headerReveal {
+            from {
+                opacity: 0;
+                transform: translateY(-40px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .header-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            background: rgba(0, 245, 255, 0.08);
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            border-radius: 100px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--cyan-glow);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+        }
+
+        .header-badge .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--cyan-glow);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--cyan-glow);
+            animation: dotPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 900;
+            line-height: 1.2;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, var(--cyan-glow) 0%, var(--violet-glow) 50%, var(--magenta-glow) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.3));
+        }
+
+        .header .subtitle {
+            font-size: 1.05rem;
+            font-weight: 300;
+            color: var(--text-muted);
+            max-width: 700px;
+            margin: 0 auto 28px;
+            line-height: 1.8;
+            letter-spacing: 0.5px;
+        }
+
+        .tags {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 6px 18px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: rgba(0, 245, 255, 0.06);
+            border: 1px solid rgba(0, 245, 255, 0.2);
+            color: var(--cyan-glow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .tag:hover {
+            background: rgba(0, 245, 255, 0.15);
+            box-shadow: var(--glow-cyan);
+            transform: translateY(-2px);
+        }
+
+        /* Cards grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 80px;
+        }
+
+        .card {
+            position: relative;
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glow);
+            border-radius: 16px;
+            padding: 32px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: cardReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            right: -50%;
+            bottom: -50%;
+            background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(0, 245, 255, 0.06) 0%, transparent 50%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 245, 255, 0.3);
+            box-shadow: var(--glow-cyan);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card:hover::after {
+            opacity: 1;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.15s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.25s; }
+        .card:nth-child(5) { animation-delay: 0.3s; }
+        .card:nth-child(6) { animation-delay: 0.35s; }
+        .card:nth-child(7) { animation-delay: 0.4s; }
+        .card:nth-child(8) { animation-delay: 0.45s; }
+        .card:nth-child(9) { animation-delay: 0.5s; }
+
+        @keyframes cardReveal {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            padding: 1px;
+            background: linear-gradient(135deg, var(--cyan-glow), var(--magenta-glow));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+
+        .card h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-bright);
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .card-content {
+            list-style: none;
+        }
+
+        .card-content li {
+            position: relative;
+            padding: 12px 0 12px 28px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            border-left: 1px solid var(--border-glow);
+            margin-left: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .card-content li:hover {
+            border-left-color: var(--cyan-glow);
+            background: rgba(0, 245, 255, 0.02);
+        }
+
+        .card-content li::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 18px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--cyan-glow);
+            box-shadow: 0 0 8px var(--cyan-glow);
+            transition: all 0.2s ease;
+        }
+
+        .card-content li:hover::before {
+            transform: scale(1.3);
+            box-shadow: 0 0 12px var(--cyan-glow);
+        }
+
+        .card-content li strong {
+            color: var(--cyan-glow);
+            font-weight: 500;
+        }
+
+        /* Tech stack grid */
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .tech-item {
+            padding: 10px 14px;
+            background: rgba(0, 245, 255, 0.04);
+            border: 1px solid rgba(0, 245, 255, 0.1);
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .tech-item:hover {
+            background: rgba(0, 245, 255, 0.08);
+            border-color: rgba(0, 245, 255, 0.2);
+        }
+
+        .tech-item strong {
+            color: var(--cyan-glow);
+            font-weight: 500;
+        }
+
+        /* Code blocks */
+        .workflow-diagram {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre;
+            color: var(--cyan-glow);
+            position: relative;
+        }
+
+        .workflow-diagram::before {
+            content: 'WORKFLOW';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            overflow-x: auto;
+            color: var(--emerald-glow);
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'PYTHON';
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 0.6rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* API endpoints */
+        .api-endpoints {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .api-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .api-item:hover {
+            border-color: var(--border-glow);
+            background: rgba(0, 245, 255, 0.04);
+        }
+
+        .api-method {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .api-method.get {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--emerald-glow);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .api-method.post {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--amber-glow);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .api-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .api-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            border-top: 1px solid var(--border-subtle);
+            animation: fadeIn 1s ease 1s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .footer-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--cyan-glow), transparent);
+        }
+
+        .footer p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .footer .source {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            letter-spacing: 1px;
+        }
+
+        .footer .error-notice {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--rose-glow);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 40px 16px;
+            }
+
+            .header {
+                margin-bottom: 50px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .tech-stack {
+                grid-template-columns: 1fr;
+            }
+
+            .api-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .api-desc {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cosmos"></div>
+    <div class="grid-plane"></div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+    <div class="scanline"></div>
+
+    <div class="container">
+        <header class="header">
+            <div class="header-badge">
+                <span class="dot"></span>
+                <span>Knowledge Card v1.0</span>
+            </div>
+            <h1>LangGraph 智能客服分流 Agent</h1>
+            <p class="subtitle">基于 LangGraph 构建的智能客服系统，集成问题分类、情感分析、自动路由与人工升级机制，配套 FastAPI 后端接口和现代化 Web 聊天界面</p>
+            <a href="https://github.com/codewithwu/langgraph-customer-support" style="display: inline-block; margin-top: 16px; color: var(--accent-emerald); text-decoration: none; font-size: 0.95rem;">Github仓库: https://github.com/codewithwu/langgraph-customer-support</a>
+            <div class="tags">
+                <span class="tag">LangGraph</span>
+                <span class="tag">LangChain</span>
+                <span class="tag">FastAPI</span>
+                <span class="tag">智能客服</span>
+                <span class="tag">Agent</span>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Card 1: Overview -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🎯</div>
+                    <h2>项目概览</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>项目定位：</strong>端到端智能客服解决方案</li>
+                    <li><strong>核心能力：</strong>意图识别、情感分析、智能路由</li>
+                    <li><strong>多模型支持：</strong>工厂模式统一管理 8 种 LLM 提供商</li>
+                    <li><strong>Web 交互：</strong>FastAPI 后端 + 现代聊天 UI</li>
+                </ul>
+                <div class="tech-stack">
+                    <div class="tech-item"><strong>工作流引擎</strong> LangGraph</div>
+                    <div class="tech-item"><strong>LLM 框架</strong> LangChain</div>
+                    <div class="tech-item"><strong>后端框架</strong> FastAPI</div>
+                    <div class="tech-item"><strong>ASGI 服务器</strong> Uvicorn</div>
+                    <div class="tech-item"><strong>数据校验</strong> Pydantic 2.0+</div>
+                    <div class="tech-item"><strong>包管理</strong> uv</div>
+                    <div class="tech-item"><strong>代码质量</strong> Ruff + mypy</div>
+                    <div class="tech-item"><strong>前端</strong> 原生 HTML/CSS/JS</div>
+                </div>
+            </div>
+
+            <!-- Card 2: Core Architecture -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <h2>核心架构：LangGraph 工作流</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>状态模型：</strong>扁平化 TypedDict 设计</li>
+                    <li><strong>状态字段：</strong>query、category、sentiment、response</li>
+                    <li><strong>节点数量：</strong>6 个工作流节点</li>
+                    <li><strong>路由逻辑：</strong>情感优先级最高</li>
+                </ul>
+                <div class="workflow-diagram">START → categorize → analyze_sentiment → route_query
+                                              ↓
+                    ┌─────────────────┼─────────────────┐
+                    ↓                 ↓                 ↓
+              [消极] escalate   [技术支持] handle_tech  [账单] handle_bill
+                    ↓                 ↓                 ↓
+                    └─────────────────┼─────────────────┘
+                                      ↓
+                                    END</div>
+            </div>
+
+            <!-- Card 3: Workflow Nodes -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔧</div>
+                    <h2>六个工作流节点</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>categorize：</strong>LLM 分类（技术支持/账单/一般）</li>
+                    <li><strong>analyze_sentiment：</strong>LLM 情感分析（积极/中性/消极）</li>
+                    <li><strong>handle_technical：</strong>技术支持专业回复</li>
+                    <li><strong>handle_billing：</strong>账单问题专业回复</li>
+                    <li><strong>handle_general：</strong>一般咨询回复</li>
+                    <li><strong>escalate：</strong>硬编码人工升级消息</li>
+                </ul>
+            </div>
+
+            <!-- Card 4: Routing Logic -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔀</div>
+                    <h2>条件路由逻辑</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>优先级判断：</strong>情感 > 类别</li>
+                    <li><strong>消极情绪：</strong>直接升级人工客服</li>
+                    <li><strong>技术支持：</strong>路由至 handle_technical</li>
+                    <li><strong>账单问题：</strong>路由至 handle_billing</li>
+                    <li><strong>一般咨询：</strong>路由至 handle_general</li>
+                </ul>
+                <div class="code-block">def route_query(state):
+    if state["sentiment"] == "消极":
+        return "escalate"
+    elif state["category"] == "技术支持":
+        return "handle_technical"
+    elif state["category"] == "账单问题":
+        return "handle_billing"
+    else:
+        return "handle_general"</div>
+            </div>
+
+            <!-- Card 5: LLM Factory -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🏭</div>
+                    <h2>LLM 工厂与多模型支持</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>设计模式：</strong>策略模式统一管理</li>
+                    <li><strong>支持提供商：</strong>8 种（OpenAI 兼容 6 种 + Ollama + NVIDIA）</li>
+                    <li><strong>当前使用：</strong>LongCat（美团）</li>
+                    <li><strong>单例模式：</strong>@lru_cache 按 Provider 缓存</li>
+                    <li><strong>速率控制：</strong>InMemoryRateLimiter 令牌桶限流</li>
+                </ul>
+                <div class="tech-stack">
+                    <div class="tech-item">Zhipu（智谱）</div>
+                    <div class="tech-item">Bailing（百灵）</div>
+                    <div class="tech-item">SiliconFlow（硅基流动）</div>
+                    <div class="tech-item">ModelScope（魔搭）</div>
+                    <div class="tech-item">LongCat（美团）</div>
+                    <div class="tech-item">DeepSeek（深度求索）</div>
+                    <div class="tech-item">Ollama（本地）</div>
+                    <div class="tech-item">NVIDIA（推理端点）</div>
+                </div>
+            </div>
+
+            <!-- Card 6: Middleware -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔗</div>
+                    <h2>中间件系统</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>自定义中间件：</strong>4 个核心功能</li>
+                    <li><strong>动态模型选择：</strong>根据对话轮次切换模型</li>
+                    <li><strong>三层工具过滤：</strong>状态/存储/上下文层</li>
+                    <li><strong>工具错误处理：</strong>友好错误消息</li>
+                    <li><strong>角色自适应：</strong>专家/初学者不同提示词</li>
+                    <li><strong>官方集成：</strong>18 个中间件</li>
+                </ul>
+            </div>
+
+            <!-- Card 7: JSON Agent -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📄</div>
+                    <h2>JSON Agent（结构化输出）</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>设计目标：</strong>严格符合 Pydantic Schema</li>
+                    <li><strong>重试机制：</strong>最多 3 次验证重试</li>
+                    <li><strong>Schema 基类：</strong>JsonAgentSchema</li>
+                    <li><strong>核心字段：</strong>is_valid: bool</li>
+                </ul>
+                <div class="code-block">class JsonAgent:
+    def invoke_with_validation(self, input, max_retries=3):
+        for attempt in range(max_retries):
+            result = self.agent.invoke(...)
+            is_valid, parsed = self.parse_json_response(result)
+            if is_valid:
+                return parsed
+        raise ValueError("JSON 响应验证失败")</div>
+            </div>
+
+            <!-- Card 8: Web Service -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🌐</div>
+                    <h2>Web 服务层</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>后端框架：</strong>FastAPI + Pydantic 校验</li>
+                    <li><strong>核心接口：</strong>POST /chat</li>
+                    <li><strong>前端特性：</strong>单文件 SPA、渐变紫色主题</li>
+                    <li><strong>安全防护：</strong>XSS 防护（textContent 转义）</li>
+                    <li><strong>响应式：</strong>480×700px 聊天卡片</li>
+                </ul>
+                <div class="api-endpoints">
+                    <div class="api-item">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/</span>
+                        <span class="api-desc">聊天页面</span>
+                    </div>
+                    <div class="api-item">
+                        <span class="api-method post">POST</span>
+                        <span class="api-path">/chat</span>
+                        <span class="api-desc">智能体回复</span>
+                    </div>
+                    <div class="api-item">
+                        <span class="api-method get">GET</span>
+                        <span class="api-path">/docs</span>
+                        <span class="api-desc">Swagger 文档</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 9: Dev Standards -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">📐</div>
+                    <h2>开发规范与快速启动</h2>
+                </div>
+                <ul class="card-content">
+                    <li><strong>工具链：</strong>Ruff 格式化 → mypy 类型检查 → pytest 测试</li>
+                    <li><strong>质量门禁：</strong>格式化、类型检查、测试全覆盖</li>
+                    <li><strong>Git 规范：</strong>feat/fix/refactor/docs/test/chore</li>
+                    <li><strong>包管理：</strong>uv add 安装依赖</li>
+                    <li><strong>启动命令：</strong>uv run python main.py</li>
+                    <li><strong>访问地址：</strong>http://localhost:8000</li>
+                </ul>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-line"></div>
+                <p>基于 LangGraph 构建的智能客服系统知识卡片</p>
+                <span class="error-notice">⚠ 版本号标记 [!!] 表示需要验证</span>
+                <p class="source">SOURCE: w.md PROJECT DOCUMENTATION</p>
+                <div class="footer-line"></div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Mouse tracking for card glow effect
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 100;
+                const y = ((e.clientY - rect.top) / rect.height) * 100;
+                card.style.setProperty('--mouse-x', x + '%');
+                card.style.setProperty('--mouse-y', y + '%');
+            });
+        });
+    </script>
+</body>
+</html>

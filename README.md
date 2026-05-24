@@ -13,3 +13,4 @@
 | 辅助学习智能体 | 基于LangGraph的多Agent智能系统，协调Planner、NoteWriter、Advisor三大Agent | https://github.com/codewithwu/academic-task-learning-agent |
 | SQL Agent LangGraph | 基于 LangGraph 构建的智能 SQL 代理，支持 SQL 生成、语法检查、人工审核和结果汇总 | https://github.com/codewithwu/sql-agent-langgraph |
 | 自适应学习助手 | 基于 LangGraph 的自适应学习 Agent，通过对话式交互帮助用户掌握知识 | https://github.com/codewithwu/adaptive-learning-agent |
+| LangGraph智能客服分流Agent | 基于 LangGraph 的智能客服分流 Agent，支持问题分类、情感分析和自动路由 | https://github.com/codewithwu/langgraph-customer-support |
