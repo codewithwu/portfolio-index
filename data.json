@@ -61,5 +61,12 @@
         "github": "https://github.com/codewithwu/langgraph-essay-grading",
         "star": 1,
         "description": "基于 LangGraph 的高考作文自动评分系统，支持审题立意、论据分析、结构评估、语言文采四维度评分，带评分理由和条件短路机制。"
+    },
+     {
+        "name": "TravelPlanner旅行助手智能体",
+        "path": "html/TravelPlanner旅行助手智能体.html",
+        "github": "https://github.com/codewithwu/travel_planner",
+        "star": 1,
+        "description": "基于 LangGraph 的全链路旅行助手，覆盖旅行前、旅行中、旅行后三阶段生命周期。"
     }
 ]

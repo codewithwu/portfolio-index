@@ -15,3 +15,4 @@
 | 自适应学习助手 | 基于 LangGraph 的自适应学习 Agent，通过对话式交互帮助用户掌握知识 | https://github.com/codewithwu/adaptive-learning-agent |
 | LangGraph智能客服分流Agent | 基于 LangGraph 的智能客服分流 Agent，支持问题分类、情感分析和自动路由 | https://github.com/codewithwu/langgraph-customer-support |
 | 高考作文评分系统 | 基于 LangGraph 的高考作文自动评分系统，支持审题立意、论据分析、结构评估、语言文采四维度评分 | https://github.com/codewithwu/langgraph-essay-grading |
+| TravelPlanner旅行助手智能体 | 基于 LangGraph 的全链路旅行助手，覆盖旅行前、旅行中、旅行后三阶段生命周期 | https://github.com/codewithwu/travel_planner |
